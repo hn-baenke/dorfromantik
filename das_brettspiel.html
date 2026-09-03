@@ -1,0 +1,2527 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Dorfromantik - Das Brettspiel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Niramit:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- Supabase Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Supabase direkt im Dokument initialisieren -->
+  <script>
+    const SUPABASE_URL = 'https://kyodeqhtxribkasxlleh.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable__Gy8dhQyAEM--eMM-cpheg_L0NyupIi';
+
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
+
+  <style>
+    body {
+      font-family: 'Niramit', sans-serif;
+      background: linear-gradient(180deg, #768151 0%, #5d673f 100%);
+      background-attachment: fixed;
+    }
+    .title-font { font-family: 'Fredoka', sans-serif; font-weight: 500; }
+    
+    .card {
+      background-color: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(8px);
+    }
+    .card-finished {
+      background-color: rgba(240, 238, 233, 0.75);
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen pb-12">
+
+  <!-- Header -->
+  <header class="p-4 flex items-center justify-between border-b border-white/10 bg-black/20 backdrop-blur-md sticky top-0 z-10 shadow-sm">
+    <a href="index.html" class="text-emerald-100 font-bold text-sm bg-white/10 px-3 py-1.5 rounded-lg hover:bg-white/20 transition">← Zurück</a>
+    <h1 class="text-xl text-emerald-100 title-font tracking-wider">DAS BRETTSPIEL</h1>
+    <div class="w-16"></div>
+  </header>
+
+  <main class="max-w-md mx-auto p-4 space-y-6 mt-2">
+
+    <!-- Option 1: Neue Kampagne Button -->
+    <div>
+      <button onclick="openModal()" class="w-full bg-emerald-800 hover:bg-emerald-700 active:scale-95 text-white font-bold p-4 rounded-2xl shadow-lg flex items-center justify-center gap-3 transition title-font text-lg border border-emerald-600/50">
+        <span class="w-7 h-7 bg-black rounded-full flex items-center justify-center shadow-inner">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+        </span>
+        Neue Kampagne starten
+      </button>
+    </div>
+
+    <!-- Option 2: Laufende Kampagnen -->
+    <section>
+      <h2 class="text-xs font-bold text-emerald-100 uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
+        <span>🌱</span> Laufende Kampagnen
+      </h2>
+      <div id="active-campaigns" class="space-y-3">
+        <p class="text-xs text-emerald-100/70 italic px-1">Lade Kampagnen...</p>
+      </div>
+    </section>
+
+    <!-- Option 3: Beendete Kampagnen -->
+    <section>
+      <h2 class="text-xs font-bold text-emerald-200/80 uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
+        <span>🏆</span> Beendete Kampagnen
+      </h2>
+      <div id="finished-campaigns" class="space-y-3">
+        <!-- Dynamische Inhalte aus Supabase -->
+      </div>
+    </section>
+
+  </main>
+
+  <div id="campaign-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-[#F7F4EF] w-full max-w-sm rounded-2xl p-5 shadow-2xl border border-stone-300/80">
+      <h2 class="text-xl font-bold text-emerald-900 title-font mb-1">Neue Kampagne</h2>
+      <p class="text-xs text-stone-600 mb-4">Gib deiner Kampagne einen Namen und füge Mitspieler hinzu.</p>
+      
+      <label class="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1">Kampagnen-Name</label>
+      <input type="text" id="campaign-name-input" placeholder="z. B. Dänemark Romantik 2026" class="w-full p-2.5 border-2 border-emerald-800/30 rounded-xl bg-white text-stone-900 focus:outline-none focus:border-emerald-800 mb-3 text-sm font-medium">
+
+      <div class="mb-3">
+        <label class="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1">Start-Datum</label>
+        <input type="date" id="campaign-date-input" class="w-full p-2.5 border-2 border-emerald-800/30 rounded-xl bg-white text-stone-900 focus:outline-none focus:border-emerald-800 text-sm font-medium">
+      </div>
+
+      <div class="mb-5">
+        <label class="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1">Mitspieler</label>
+        
+        <div class="flex gap-2 mb-2">
+          <input type="text" 
+       id="player-name-input" 
+       placeholder="Name eingeben..." 
+       onkeydown="if(event.key === 'Enter') { event.preventDefault(); addPlayer(); }"
+       class="flex-1 p-2 border-2 border-emerald-800/30 rounded-xl bg-white text-stone-900 focus:outline-none focus:border-emerald-800 text-sm">
+          <button type="button" onclick="addPlayer()" class="bg-emerald-800 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-xl text-sm transition">
+            + Hinzufügen
+          </button>
+        </div>
+
+        <div id="players-list" class="flex flex-wrap gap-1.5 min-h-[38px] p-2 bg-stone-200/50 rounded-xl border border-stone-300/60">
+          <span class="text-xs text-stone-400 self-center italic px-1">Niemand eingetragen</span>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="closeModal()" class="flex-1 bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold py-2.5 rounded-xl text-sm transition">
+          Abbrechen
+        </button>
+        <button id="btn-create-campaign" onclick="createCampaign()" class="flex-1 bg-emerald-800 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow">
+          Erstellen
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POP-UP MODAL: Kampagnen Optionen -->
+<div id="options-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+  <div class="bg-[#F7F4EF] w-full max-w-sm rounded-2xl p-5 shadow-2xl border border-stone-300/80 space-y-4">
+    <div>
+      <h2 id="options-modal-title" class="text-xl font-bold text-emerald-900 title-font mb-0.5">Kampagnen-Optionen</h2>
+      <p id="options-modal-subtitle" class="text-xs text-stone-600">Wähle eine Aktion aus</p>
+    </div>
+
+    <div class="space-y-2.5 pt-1">
+      <button onclick="addScore()" class="w-full text-left bg-emerald-800 hover:bg-emerald-700 active:scale-[0.98] text-white p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-emerald-700 cursor-pointer">
+  <div class="flex items-center gap-3">
+    <!-- Perfekt zentriertes und größeres Plus -->
+    <span class="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center shrink-0">
+  <svg class="w-5 h-5 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+  </svg>
+</span>
+    <div>
+      <div class="title-font text-base leading-tight">Wertung Hinzufügen</div>
+      <div class="text-[11px] font-normal text-emerald-100/80">Trage die Punkte einer neuen Runde ein</div>
+    </div>
+  </div>
+  <span>→</span>
+</button>
+
+      <button onclick="showCampaignOverview()" class="w-full text-left bg-white hover:bg-stone-100 active:scale-[0.98] text-stone-800 p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-stone-300 cursor-pointer">
+        <div class="flex items-center gap-3">
+          <span class="text-xl">🗺️</span>
+          <div>
+            <div class="title-font text-base text-emerald-900 leading-tight">Kampangen überblick</div>
+            <div class="text-[11px] font-normal text-stone-500">Freigeschaltete Plättchen & Erreichte Boni</div>
+          </div>
+        </div>
+        <span>→</span>
+      </button>
+
+      <button onclick="showScoresOverview()" class="w-full text-left bg-white hover:bg-stone-100 active:scale-[0.98] text-stone-800 p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-stone-300 cursor-pointer">
+        <div class="flex items-center gap-3">
+          <span class="text-xl">📊</span>
+          <div>
+            <div class="title-font text-base text-emerald-900 leading-tight">Wertungen Überblick</div>
+            <div class="text-[11px] font-normal text-stone-500">Historie aller gespielten Runden</div>
+          </div>
+        </div>
+        <span>→</span>
+      </button>
+
+      <!-- NEU: Kampagne abschließen -->
+      <button onclick="openFinishCampaignModal()" class="w-full text-left bg-white hover:bg-stone-100 active:scale-[0.98] text-stone-800 p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-stone-300 cursor-pointer">
+        <div class="flex items-center gap-3">
+          <span class="text-xl">🏁</span>
+          <div>
+            <div class="title-font text-base text-emerald-900 leading-tight">Kampagne abschließen</div>
+            <div class="text-[11px] font-normal text-stone-500">Kampagne beenden & Enddatum festlegen</div>
+          </div>
+        </div>
+        <span>→</span>
+      </button>
+    </div>
+
+    <div class="pt-2">
+      <button type="button" onclick="closeOptionsModal()" class="w-full bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold py-2.5 rounded-xl text-sm transition cursor-pointer">
+        Schließen
+      </button>
+    </div>
+  </div>
+</div>
+
+  <!-- POP-UP MODAL: Wertung Hinzufügen -->
+  <div id="score-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-[#F7F4EF] w-full max-w-md rounded-2xl p-5 shadow-2xl border border-stone-300/80 max-h-[90vh] flex flex-col">
+      
+      <!-- Modal Header -->
+      <div class="pb-3 border-b border-stone-300/80 flex justify-between items-center">
+        <div>
+          <h2 class="text-xl font-bold text-emerald-900 title-font">Neue Wertung</h2>
+          <p class="text-xs text-stone-600">Punkte der Partie eintragen</p>
+        </div>
+        <div class="text-right">
+          <span class="text-[10px] text-stone-500 uppercase font-bold block">Gesamtsumme</span>
+          <span id="live-total-score" class="text-2xl font-bold text-emerald-800 title-font">0</span>
+        </div>
+      </div>
+
+      <!-- Scrollbarer Formular-Inhalt -->
+      <div class="overflow-y-auto py-4 space-y-5 flex-1 pr-1">
+        
+        <!-- Datum & Partie-Nr. Grid -->
+<div class="grid grid-cols-3 gap-3">
+  <div class="col-span-2">
+    <label class="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1">Datum</label>
+    <input type="date" id="score-date" class="w-full p-2.5 border-2 border-emerald-800/30 rounded-xl bg-white text-stone-900 focus:outline-none focus:border-emerald-800 text-sm font-medium">
+  </div>
+  <div>
+    <label class="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1">Partie-Nr.</label>
+    <input type="number" id="score-game-number" min="1" class="w-full p-2.5 border-2 border-emerald-800/30 rounded-xl bg-white text-stone-900 focus:outline-none focus:border-emerald-800 text-sm font-bold text-center">
+  </div>
+</div>
+
+        <!-- Hauptkategorien Table/Grid -->
+<div>
+  <h3 class="text-xs font-bold text-emerald-900 uppercase tracking-wider mb-2">Standard Wertung</h3>
+  <div class="bg-white rounded-xl p-3 border border-stone-300 space-y-4">
+    
+    <!-- Block 1: Aufträge -->
+    <div>
+      <div class="text-[11px] font-bold text-stone-500 uppercase tracking-wider mb-2 border-b pb-1">
+        1. Aufträge
+      </div>
+      <div class="space-y-2">
+        <div class="flex items-center justify-between text-xs font-semibold">
+          <span>🌲 Wald Aufträge</span>
+          <input type="number" min="0" placeholder="0" class="score-input w-20 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="wald_auftrag">
+        </div>
+        <div class="flex items-center justify-between text-xs font-semibold">
+          <span>🌾 Feld Aufträge</span>
+          <input type="number" min="0" placeholder="0" class="score-input w-20 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="feld_auftrag">
+        </div>
+        <div class="flex items-center justify-between text-xs font-semibold">
+          <span>🏠 Dorf Aufträge</span>
+          <input type="number" min="0" placeholder="0" class="score-input w-20 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="dorf_auftrag">
+        </div>
+        <div class="flex items-center justify-between text-xs font-semibold">
+          <span>🚂 Bahn Aufträge</span>
+          <input type="number" min="0" placeholder="0" class="score-input w-20 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="bahn_auftrag">
+        </div>
+        <div class="flex items-center justify-between text-xs font-semibold">
+          <span>🌊 Fluss Aufträge</span>
+          <input type="number" min="0" placeholder="0" class="score-input w-20 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="fluss_auftrag">
+        </div>
+      </div>
+    </div>
+
+    <!-- Block 2: Fahnen & Längste -->
+    <div>
+      <div class="text-[11px] font-bold text-stone-500 uppercase tracking-wider mb-2 border-b pb-1">
+        2. Fahnen / Längste
+      </div>
+      <div class="space-y-2">
+        <div class="flex items-center justify-between text-xs font-semibold">
+          <span>🌲 Wald (Fahnen)</span>
+          <input type="number" min="0" placeholder="0" class="score-input w-20 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="wald_fahnen_laengste">
+        </div>
+        <div class="flex items-center justify-between text-xs font-semibold">
+          <span>🌾 Feld (Fahnen)</span>
+          <input type="number" min="0" placeholder="0" class="score-input w-20 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="feld_fahnen_laengste">
+        </div>
+        <div class="flex items-center justify-between text-xs font-semibold">
+          <span>🏠 Dorf (Fahnen)</span>
+          <input type="number" min="0" placeholder="0" class="score-input w-20 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="dorf_fahnen_laengste">
+        </div>
+        <div class="flex items-center justify-between text-xs font-semibold">
+          <span>🚂 Bahn (Längste)</span>
+          <input type="number" min="0" placeholder="0" class="score-input w-20 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="bahn_fahnen_laengste">
+        </div>
+        <div class="flex items-center justify-between text-xs font-semibold">
+          <span>🌊 Fluss (Längster)</span>
+          <input type="number" min="0" placeholder="0" class="score-input w-20 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="fluss_fahnen_laengste">
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+        <!-- Freigespielt (1:1 aus PDF) -->
+        <div>
+          <h3 class="text-xs font-bold text-emerald-900 uppercase tracking-wider mb-2">Freigespielt</h3>
+          <div class="bg-white rounded-xl p-3 border border-stone-300 space-y-2 text-xs font-medium">
+            
+            <div class="flex items-center justify-between gap-2 py-1 border-b border-stone-100">
+              <label class="text-stone-700">❤️ Rote Herzen (1/passender Kante)</label>
+              <input type="number" min="0" placeholder="0" class="score-input w-16 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="rote_herzen">
+            </div>
+
+            <div class="flex items-center justify-between gap-2 py-1 border-b border-stone-100">
+              <label class="text-stone-700">🎪 Zirkus (umschlossen = 10)</label>
+              <input type="number" min="0" placeholder="0" class="score-input w-16 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="zirkus">
+            </div>
+
+            <div class="flex items-center justify-between gap-2 py-1 border-b border-stone-100">
+              <label class="text-stone-700">🛤️ Bahnwärter (2/Bahnübergang)</label>
+              <input type="number" min="0" placeholder="0" class="score-input w-16 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="bahnwaerter">
+            </div>
+
+            <div class="flex items-center justify-between gap-2 py-1 border-b border-stone-100">
+              <label class="text-stone-700">🐑 Schäferin (1/Schaf)</label>
+              <input type="number" min="0" placeholder="0" class="score-input w-16 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="schaeferin">
+            </div>
+
+            <div class="flex items-center justify-between gap-2 py-1 border-b border-stone-100">
+              <label class="text-stone-700">⛰️ Hügel (im Abstand 2 = 2/Auftrag)</label>
+              <input type="number" min="0" placeholder="0" class="score-input w-16 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="huegel">
+            </div>
+
+            <div class="flex items-center justify-between gap-2 py-1 border-b border-stone-100">
+              <label class="text-stone-700">🏗️ Baustelle (pro Gebiet 7+ = 7)</label>
+              <input type="number" min="0" placeholder="0" class="score-input w-16 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="baustelle">
+            </div>
+
+            <div class="flex items-center justify-between gap-2 py-1 border-b border-stone-100">
+              <label class="text-stone-700">🎈 Ballon-Startplatz (2/Entfernung)</label>
+              <input type="number" min="0" placeholder="0" class="score-input w-16 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="ballon_startplatz">
+            </div>
+
+            <div class="flex items-center justify-between gap-2 py-1 border-b border-stone-100">
+              <label class="text-stone-700">💛 Goldenes Herz (2/passender Kante)</label>
+              <input type="number" min="0" placeholder="0" class="score-input w-16 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="goldenes_herz">
+            </div>
+
+            <div class="flex items-center justify-between gap-2 py-1 border-b border-stone-100">
+              <label class="text-stone-700">🏡 Waldhütte (-Aufträge)</label>
+              <input type="number" min="0" placeholder="0" class="score-input w-16 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="waldhuette">
+            </div>
+
+            <div class="flex items-center justify-between gap-2 py-1 border-b border-stone-100">
+              <label class="text-stone-700">🌻 Erntefest (-Aufträge)</label>
+              <input type="number" min="0" placeholder="0" class="score-input w-16 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="erntefest">
+            </div>
+
+            <div class="flex items-center justify-between gap-2 py-1 border-b border-stone-100">
+              <label class="text-stone-700">🏰 Wachturm (-Aufträge)</label>
+              <input type="number" min="0" placeholder="0" class="score-input w-16 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="wachturm">
+            </div>
+
+            <div class="flex items-center justify-between gap-2 py-1 border-b border-stone-100">
+              <label class="text-stone-700">🚂 Lokomotive (-Aufträge)</label>
+              <input type="number" min="0" placeholder="0" class="score-input w-16 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="lokomotive">
+            </div>
+
+            <div class="flex items-center justify-between gap-2 py-1 border-b border-stone-100">
+              <label class="text-stone-700">⛵ Schiff (-Aufträge)</label>
+              <input type="number" min="0" placeholder="0" class="score-input w-16 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="schiff">
+            </div>
+
+            <div class="flex items-center justify-between gap-2 py-1 border-b border-stone-100">
+              <label class="text-stone-700">🚉 Bahnhof (beendet = 1/Plättchen)</label>
+              <input type="number" min="0" placeholder="0" class="score-input w-16 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="bahnhof">
+            </div>
+
+            <div class="flex items-center justify-between gap-2 py-1">
+              <label class="text-stone-700">⚓ Hafen (beendet = 1/Plättchen)</label>
+              <input type="number" min="0" placeholder="0" class="score-input w-16 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="hafen">
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Erweiterungen -->
+        <div>
+          <h3 class="text-xs font-bold text-emerald-900 uppercase tracking-wider mb-2">Erweiterungen</h3>
+          <div class="bg-white rounded-xl p-3 border border-stone-300 space-y-2 text-xs font-medium">
+            
+            <div class="flex items-center justify-between gap-2 py-1 border-b border-stone-100">
+              <label class="text-stone-700">⚙️ Die Große Mühle</label>
+              <input type="number" min="0" placeholder="0" class="score-input w-16 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="grosse_muehle">
+            </div>
+
+            <div class="flex items-center justify-between gap-2 py-1 border-b border-stone-100">
+              <label class="text-stone-700">📷 Der Fotograf</label>
+              <input type="number" min="0" placeholder="0" class="score-input w-16 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="fotograf">
+            </div>
+
+            <div class="flex items-center justify-between gap-2 py-1 border-b border-stone-100">
+              <label class="text-stone-700">🌾 Kornspeicher</label>
+              <input type="number" min="0" placeholder="0" class="score-input w-16 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="kornspeicher">
+            </div>
+
+            <div class="flex items-center justify-between gap-2 py-1">
+              <label class="text-stone-700">🏫 Schule</label>
+              <input type="number" min="0" placeholder="0" class="score-input w-16 p-1.5 border rounded-lg text-center bg-stone-50" data-cat="schule">
+            </div>
+
+          </div>
+        </div>
+
+
+      </div>
+
+      <!-- Actions Footer -->
+      <div class="pt-3 border-t border-stone-300/80 flex gap-2">
+        <button onclick="closeScoreModal()" class="flex-1 bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold py-2.5 rounded-xl text-sm transition">
+          Abbrechen
+        </button>
+        <button id="btn-save-score" onclick="saveScore()" class="flex-1 bg-emerald-800 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow">
+          Speichern
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FREISCHALTUNGEN MODAL -->
+<div id="unlocks-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] hidden">
+  <div class="bg-stone-100 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-stone-200">
+    
+    <!-- Modal Header -->
+    <div class="flex items-center gap-3 mb-4">
+      <div class="p-2 bg-emerald-100 text-emerald-800 rounded-xl text-xl">
+        🎁
+      </div>
+      <div>
+        <h3 class="text-xl font-bold text-stone-800">Freischaltungen</h3>
+        <p class="text-xs text-stone-500">Hast du in dieser Partie etwas freigespielt?</p>
+      </div>
+    </div>
+
+    <!-- Eingekastelter Bereich für die Checkboxen -->
+    <div class="bg-white/60 rounded-2xl border border-stone-200/80 p-3 my-4">
+      <div id="match-unlocks-selector" class="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-1">
+        <!-- Wird durch renderMatchUnlocksSelector() befüllt -->
+      </div>
+    </div>
+
+    <!-- Modal Footer (Zentrierter Button) -->
+    <div class="mt-6 pt-4 border-t border-stone-200 flex justify-center">
+      <button 
+        onclick="saveMatchUnlocks()" 
+        class="w-full sm:w-auto px-8 py-3 bg.emerald-800 bg-[#2d5a43] hover:bg-[#234734] text-white font-semibold rounded-xl shadow-md transition active:scale-95 text-sm flex items-center justify-center gap-2">
+        <span>Speichern & Fortfahren</span>
+        <span>→</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+  <!-- Modal: Kampagnen-Übersicht & Partien -->
+<div id="campaign-details-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+  <div class="bg-stone-100 w-full max-w-md rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+    
+    <!-- Header -->
+    <div class="bg-emerald-800 text-white p-4 flex justify-between items-center">
+      <div>
+        <h2 id="modal-campaign-title" class="font-bold text-lg leading-tight">Kampagnen Details</h2>
+        <p id="modal-campaign-players" class="text-xs text-emerald-200"></p>
+      </div>
+      <button onclick="closeScoresOverview()" class="text-emerald-200 hover:text-white font-bold text-xl px-2">✕</button>
+    </div>
+
+    <!-- Scrollbarer Inhalt -->
+    <div class="p-4 overflow-y-auto space-y-4 text-stone-800">
+      
+      <!-- Beste Partie Box (Zartes Gelb mit Krone) -->
+      <div id="best-game-box" class="bg-amber-100/80 border-2 border-amber-300 rounded-xl p-3 shadow-sm cursor-pointer transition hover:bg-amber-200/60" onclick="toggleScoreDetails('best')">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center space-x-2">
+            <span class="text-xl">👑</span>
+            <div>
+              <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-800">Beste Partie</div>
+              <div id="best-game-meta" class="text-xs font-semibold text-stone-700"></div>
+            </div>
+          </div>
+          <div id="best-game-score" class="text-lg font-black text-amber-900"></div>
+        </div>
+        <!-- Einklappbarer Wertungsblock für die beste Partie -->
+        <div id="best-game-details" class="hidden mt-3 pt-3 border-t border-amber-300/60 text-xs"></div>
+      </div>
+
+      <!-- Chronologische Liste -->
+      <div>
+        <h3 class="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2 px-1">Alle Partien</h3>
+        <div id="rounds-list" class="space-y-2">
+          <!-- Dynamische Eintrags-Zeilen -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer mit Aktionen -->
+    <div class="p-3 bg-stone-200/80 border-t border-stone-300 flex justify-between items-center">
+      <button onclick="closeScoresOverview()" class="bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold py-2.5 px-5 rounded-xl text-sm transition cursor-pointer">
+  Schließen
+</button>
+      <button id="btn-add-score-from-modal" onclick="addScore()" class="px-4 py-2 text-xs font-bold text-white bg-emerald-800 rounded-xl hover:bg-emerald-700">
+        + Neue Partie
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal: Kampagnen-Übersicht (Freigeschaltete Elemente & Kampagnenblatt) -->
+<div id="campaign-overview-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 sm:p-4 z-50 hidden">
+  <div class="bg-[#F7F4EF] w-full max-w-xl h-full sm:h-auto max-h-screen sm:max-h-[90vh] rounded-none sm:rounded-2xl shadow-xl overflow-hidden flex flex-col">
+    
+    <!-- Header -->
+    <div class="bg-emerald-800 text-white p-3.5 sm:p-4 flex justify-between items-center shrink-0">
+      <div>
+        <h2 class="font-bold text-lg sm:text-xl leading-tight">Kampagnen-Blatt & Erfolge</h2>
+        <p class="text-xs text-emerald-200">Freigeschaltete Plättchen & Module ankreuzen</p>
+      </div>
+      <button onclick="closeCampaignOverviewModal()" class="text-emerald-200 hover:text-white font-bold text-2xl px-2 cursor-pointer">✕</button>
+    </div>
+
+    <!-- Scrollbarer Inhalt -->
+    <div class="p-2.5 sm:p-4 overflow-y-auto space-y-3 sm:space-y-4 text-stone-800 flex-1">
+      
+        <p class="text-xs sm:text-sm text-stone-600 italic px-1">
+          Klicke die Elemente an, die eure Gruppe in der Kampagne bereits freigeschaltet hat. Der Fortschritt wird automatisch gespeichert!
+        </p>
+
+        <!-- Sektion: Module & Erfolge -->
+        <div class="bg-white rounded-xl p-2.5 sm:p-3.5 border border-stone-300 shadow-sm">
+          <h3 class="text-xs sm:text-sm font-bold text-emerald-900 uppercase tracking-wider mb-2">Kampagnenblatt (Erfolge)</h3>
+          
+          <!-- Grid für die Checkboxen im Look von Ankreuz-Kästchen -->
+          <div id="unlockables-checklist" class="w-full space-y-3">
+            <!-- Wird dynamisch befüllt -->
+          </div>
+        </div>
+
+    </div>
+
+    <!-- Footer: Beide Buttons im identischen, helleren Smaragdgrün -->
+<div class="p-3 sm:p-4 border-t border-stone-200 bg-stone-50 rounded-b-none sm:rounded-b-2xl grid grid-cols-2 gap-2.5 shrink-0">
+  <button onclick="saveCampaignWaypoints('newMatch')" 
+          class="w-full py-2.5 px-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer">
+    <span class="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center shrink-0">
+      <svg class="w-4 h-4 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+      </svg>
+    </span>
+    <span>Speichern & neue Partie</span>
+  </button>
+  
+  <button onclick="saveCampaignWaypoints('finish')" 
+          class="w-full py-2.5 px-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+    <span>✓</span>
+    <span>Speichern & Fertig</span>
+  </button>
+</div>
+
+<!-- POP-UP MODAL: Kampagne abschließen -->
+<div id="finish-campaign-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+  <div class="bg-[#F7F4EF] w-full max-w-sm rounded-2xl p-5 shadow-2xl border border-stone-300/80">
+    <h2 class="text-xl font-bold text-emerald-900 title-font mb-1">Kampagne beenden?</h2>
+    <p class="text-xs text-stone-600 mb-4">Möchtest du diese Kampagne wirklich abschließen? Du kannst danach das Enddatum festlegen.</p>
+    
+    <!-- Enddatum Container -->
+    <div class="mb-5">
+      <label class="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1">End-Datum</label>
+      <input type="date" id="finish-campaign-date-input" class="w-full p-2.5 border-2 border-emerald-800/30 rounded-xl bg-white text-stone-900 focus:outline-none focus:border-emerald-800 text-sm font-medium">
+    </div>
+
+    <div class="flex gap-2">
+      <button onclick="closeFinishCampaignModal()" class="flex-1 bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold py-2.5 rounded-xl text-sm transition">
+        Abbrechen
+      </button>
+      <button id="btn-confirm-finish" onclick="confirmFinishCampaign()" class="flex-1 bg-emerald-800 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow">
+        Abschließen
+      </button>
+    </div>
+  </div>
+</div>
+
+    <!-- POP-UP MODAL: Beendete Kampagne (Nur Übersicht) -->
+<div id="finished-options-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+  <div class="bg-[#F7F4EF] w-full max-w-sm rounded-2xl p-5 shadow-2xl border border-stone-300/80 space-y-4">
+    <div>
+      <h2 id="finished-modal-title" class="text-xl font-bold text-emerald-900 title-font mb-0.5">Titel</h2>
+      <p id="finished-modal-subtitle" class="text-xs text-stone-600">Beendete Kampagne</p>
+    </div>
+
+    <div class="space-y-2.5 pt-1">
+      <!-- Kampagnen-Überblick -->
+      <button onclick="showCampaignOverview()" class="w-full text-left bg-white hover:bg-stone-100 active:scale-[0.98] text-stone-800 p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-stone-300">
+        <div class="flex items-center gap-3">
+          <span class="text-xl">🗺️</span>
+          <div>
+            <div class="title-font text-base text-emerald-900 leading-tight">Kampagnen-Überblick</div>
+            <div class="text-[11px] font-normal text-stone-500">Freigeschaltete Plättchen & Erreichte Boni</div>
+          </div>
+        </div>
+        <span>→</span>
+      </button>
+
+      <!-- Wertungen Überblick -->
+      <button onclick="showScoresOverview()" class="w-full text-left bg-white hover:bg-stone-100 active:scale-[0.98] text-stone-800 p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-stone-300">
+        <div class="flex items-center gap-3">
+          <span class="text-xl">📊</span>
+          <div>
+            <div class="title-font text-base text-emerald-900 leading-tight">Wertungen Überblick</div>
+            <div class="text-[11px] font-normal text-stone-500">Historie aller gespielten Runden</div>
+          </div>
+        </div>
+        <span>→</span>
+      </button>
+
+      <!-- NEU: Kampagne löschen Button -->
+      <button onclick="deleteFinishedCampaign()" class="w-full text-left bg-red-50 hover:bg-red-100 active:scale-[0.98] text-red-700 p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-red-200">
+        <div class="flex items-center gap-3">
+          <span class="text-xl">🗑️</span>
+          <div>
+            <div class="title-font text-base leading-tight">Kampagne löschen</div>
+            <div class="text-[11px] font-normal text-red-500/80"> unwiderruflich aus Datenbank entfernen</div>
+          </div>
+        </div>
+        <span>→</span>
+      </button>
+    </div>
+    
+    <!-- Schließen-Button -->
+    <button onclick="closeFinishedModal()" class="w-full bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold p-3 rounded-xl transition text-center text-sm">
+      Schließen
+    </button>
+  </div>
+</div>
+
+  <script>
+    let campaignsData = [];
+    let currentPlayers = [];
+    let selectedCampaignId = null;
+    let editingRoundIndex = null; // null = Neue Partie, Zahl = Partie wird bearbeitet
+    let tempSelectedWaypoints = [];
+
+    document.addEventListener('DOMContentLoaded', fetchCampaigns);
+
+    // 1. Umrechnung von Rundenpunkten in Schritte auf dem Pfad (aus dem Kampagnenblatt)[cite: 1]
+const SCORE_TO_STEPS_TABLE = [
+  { minScore: 400, steps: 15 },
+  { minScore: 375, steps: 15 },
+  { minScore: 350, steps: 15 },
+  { minScore: 340, steps: 14 },
+  { minScore: 330, steps: 14 },
+  { minScore: 320, steps: 13 },
+  { minScore: 310, steps: 13 },
+  { minScore: 300, steps: 12 },
+  { minScore: 290, steps: 12 },
+  { minScore: 280, steps: 11 },
+  { minScore: 270, steps: 11 },
+  { minScore: 260, steps: 10 },
+  { minScore: 250, steps: 10 },
+  { minScore: 240, steps: 9  },
+  { minScore: 230, steps: 9  },
+  { minScore: 220, steps: 8  },
+  { minScore: 210, steps: 8  },
+  { minScore: 200, steps: 7  },
+  { minScore: 190, steps: 7  },
+  { minScore: 180, steps: 6  },
+  { minScore: 170, steps: 6  },
+  { minScore: 160, steps: 5  },
+  { minScore: 150, steps: 5  },
+  { minScore: 140, steps: 4  },
+  { minScore: 130, steps: 4  },
+  { minScore: 120, steps: 3  },
+  { minScore: 110, steps: 3  },
+  { minScore: 100, steps: 2  },
+  { minScore: 0,   steps: 1  }
+];
+
+// Exakte Pfad-Struktur nach deinem Diagramm (Links: A, Mitte: B, Rechts: C)
+const CAMPAIGN_NODES = {
+  // Hauptpfad Start
+  start: { id: 'start', name: 'Start', steps: 0, next: 'box_1' },
+  box_1: { id: 'box_1', name: 'Schachtel 1', steps: 2, next: 'box_2' },
+  box_2: { id: 'box_2', name: 'Schachtel 2', steps: 7, isFork: true }, // 2 + 5 Kreuze = 7
+
+  // Gabelung 1 (nach Schachtel 2)
+  lagerhaus: { id: 'lagerhaus', name: 'Lagerhaus (Route A)', steps: 11, icon: '🏭' }, // +4 Kreuze
+  zirkus: { id: 'zirkus', name: 'Zirkus (Route C)', steps: 11, icon: '🎪' },         // +4 Kreuze
+
+  // Knotenpunkte Route A (Links)
+  getreidetunnel: { id: 'getreidetunnel', name: 'Getreidetunnel', steps: 17, icon: '🚂' }, // +6 Kreuze
+  herz_a: { id: 'herz_a', name: 'Rotes Herz (Route A)', steps: 21, icon: '❤️' },          // +4 Kreuze
+  dorftunnel: { id: 'dorftunnel', name: 'Dorftunnel', steps: 25, icon: '🏠' },             // +4 Kreuze
+  waldtunnel: { id: 'waldtunnel', name: 'Waldtunnel', steps: 35, icon: '🌲' },             // +10 Kreuze
+  wolke_a: { id: 'wolke_a', name: 'Wolke (Finale A)', steps: 45, icon: '☁️' },             // +10 Kreuze
+
+  // Knotenpunkte Route B (Mitte - erreichbar von Lagerhaus OR Zirkus via Bahnwärter)
+  bahnwaerter: { id: 'bahnwaerter', name: 'Bahnwärter (Route B)', steps: 17, icon: '👨‍✈️' }, // +6 Kreuze
+  herz_b: { id: 'herz_b', name: 'Rotes Herz (Route B)', steps: 21, icon: '❤️' },            // +4 Kreuze
+  schaeferin: { id: 'schaeferin', name: 'Schäferin', steps: 25, icon: '🐑' },                // +4 Kreuze
+  huegel: { id: 'huegel', name: 'Hügel', steps: 35, icon: '⛰️' },                          // +10 Kreuze
+  wolke_b: { id: 'wolke_b', name: 'Wolke (Finale B)', steps: 45, icon: '☁️' },               // +10 Kreuze
+
+  // Knotenpunkte Route C (Rechts)
+  damhirsch: { id: 'damhirsch', name: 'Damhirsch', steps: 17, icon: '🦌' },                // +6 Kreuze
+  herz_c: { id: 'herz_c', name: 'Rotes Herz (Route C)', steps: 21, icon: '❤️' },          // +4 Kreuze
+  burg: { id: 'burg', name: 'Burg', steps: 25, icon: '🏰' },                               // +4 Kreuze
+  bauernhof: { id: 'bauernhof', name: 'Bauernhof', steps: 35, icon: '🌾' },                // +10 Kreuze
+  wolke_c: { id: 'wolke_c', name: 'Wolke (Finale C)', steps: 45, icon: '☁️' }              // +10 Kreuze
+};
+
+// Hilfsfunktion: Berechnet aus einer Punktzahl die Anzahl der Schritte
+function getStepsFromScore(score) {
+  const match = SCORE_TO_STEPS_TABLE.find(entry => score >= entry.minScore);
+  return match ? match.steps : 1;
+}
+
+    // Daten aus Supabase abrufen
+    async function fetchCampaigns() {
+      const activeContainer = document.getElementById('active-campaigns');
+      
+      try {
+        const { data, error } = await db
+          .from('dorfromantik_campaigns')
+          .select('*')
+          .order('id', { ascending: false });
+
+        if (error) {
+          console.error("Fehler beim Laden:", error);
+          activeContainer.innerHTML = '<p class="text-xs text-red-200 italic px-1">Fehler beim Verbinden mit Supabase.</p>';
+          return;
+        }
+
+        campaignsData = data || [];
+        renderCampaigns();
+      } catch (err) {
+        console.error("Netzwerkfehler:", err);
+        activeContainer.innerHTML = '<p class="text-xs text-red-200 italic px-1">Verbindungsfehler zur Datenbank.</p>';
+      }
+    }
+
+    function openModal() {
+  // Datum automatisch auf den heutigen Tag setzen
+  const dateInput = document.getElementById('campaign-date-input');
+  if (dateInput) {
+    dateInput.value = new Date().toISOString().split('T')[0];
+  }
+
+  document.getElementById('campaign-modal').classList.remove('hidden');
+  document.getElementById('campaign-name-input').focus();
+}
+
+    function closeModal() {
+      document.getElementById('campaign-modal').classList.add('hidden');
+      document.getElementById('campaign-name-input').value = '';
+      document.getElementById('player-name-input').value = '';
+      currentPlayers = [];
+      renderPlayers();
+    }
+
+    function addPlayer() {
+  const input = document.getElementById('player-name-input');
+  const name = input.value.trim();
+  
+  if (name && !currentPlayers.includes(name)) {
+    currentPlayers.push(name);
+    input.value = '';
+    renderPlayers();
+    input.focus(); // Fokus bleibt sofort im Feld für den nächsten Mitspieler!
+  }
+}
+
+    function removePlayer(name) {
+      currentPlayers = currentPlayers.filter(p => p !== name);
+      renderPlayers();
+    }
+
+    function renderPlayers() {
+      const container = document.getElementById('players-list');
+      if (currentPlayers.length === 0) {
+        container.innerHTML = '<span class="text-xs text-stone-400 self-center italic px-1">Niemand eingetragen</span>';
+        return;
+      }
+      
+      container.innerHTML = currentPlayers.map(player => `
+        <span class="inline-flex items-center gap-1 bg-white border border-stone-300 text-stone-800 text-xs font-semibold px-2.5 py-1 rounded-lg shadow-sm">
+          ${player}
+          <button type="button" onclick="removePlayer('${player}')" class="text-stone-400 hover:text-red-500 font-bold ml-1">×</button>
+        </span>
+      `).join('');
+    }
+
+    async function createCampaign() {
+      const nameInput = document.getElementById('campaign-name-input');
+      const name = nameInput.value.trim();
+      if (!name) {
+        alert("Bitte gib einen Namen für die Kampagne ein!");
+        return;
+      }
+
+      // Start-Datum auslesen (mit Fallback auf heute, falls leer)
+      const dateInput = document.getElementById('campaign-date-input');
+      const start_date = dateInput && dateInput.value ? dateInput.value : new Date().toISOString().split('T')[0];
+
+      const createBtn = document.getElementById('btn-create-campaign');
+      createBtn.disabled = true;
+      createBtn.textContent = "Speichert...";
+
+      const newCampaign = {
+        name: name,
+        start_date: start_date, // <--- Hier wird das Start-Datum mitgespeichert
+        players: currentPlayers,
+        finished: false,
+        total_score: 0,
+        rounds: []
+      };
+
+      try {
+        const { data, error } = await db
+          .from('dorfromantik_campaigns')
+          .insert([newCampaign])
+          .select();
+
+        if (error) {
+          console.error("Supabase Fehler:", error);
+          alert("Fehler beim Speichern: " + error.message);
+        } else {
+          closeModal();
+          await fetchCampaigns();
+        }
+      } catch (err) {
+        console.error("Unerwarteter Fehler:", err);
+        alert("Verbindungsfehler: " + err.message);
+      } finally {
+        createBtn.disabled = false;
+        createBtn.textContent = "Erstellen";
+      }
+    }
+
+    function renderCampaigns() {
+  const activeContainer = document.getElementById('active-campaigns');
+  const finishedContainer = document.getElementById('finished-campaigns');
+
+  const active = campaignsData.filter(c => !c.finished);
+  const finished = campaignsData.filter(c => c.finished);
+
+  // Laufende Kampagnen
+  if (active.length === 0) {
+    activeContainer.innerHTML = '<p class="text-xs text-emerald-100/70 italic px-1">Keine laufenden Kampagnen vorhanden.</p>';
+  } else {
+    activeContainer.innerHTML = active.map(c => {
+      const roundsCount = (c.rounds && c.rounds.length) || 0;
+      const highScore = getHighScore(c.rounds);
+      
+      // Startdatum formatieren (falls vorhanden)
+      const startDateText = c.start_date ? `📅 Start: ${formatDate(c.start_date)}` : '';
+
+      return `
+        <div class="card p-4 rounded-2xl shadow-md border border-stone-200/80 flex justify-between items-center">
+          <div>
+            <h3 class="font-bold text-stone-900 text-base">${c.name}</h3>
+            <p class="text-xs text-stone-600">${c.players && c.players.length > 0 ? 'Mit: ' + c.players.join(', ') : 'Solo-Kampagne'}</p>
+            ${startDateText ? `<p class="text-[11px] text-stone-500 mt-0.5">${startDateText}</p>` : ''}
+            <span class="inline-block mt-1 text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full">
+              Highscore: ${highScore} Punkte (${roundsCount} ${roundsCount === 1 ? 'Partie' : 'Partien'})
+            </span>
+          </div>
+          <button onclick="openCampaign(${c.id})" class="bg-emerald-800 text-white text-xs font-bold px-3 py-2 rounded-xl hover:bg-emerald-700 transition">
+            Fortsetzen →
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Beendete Kampagnen
+  if (finished.length === 0) {
+    finishedContainer.innerHTML = '<p class="text-xs text-emerald-200/60 italic px-1">Noch keine beendeten Kampagnen.</p>';
+  } else {
+    finishedContainer.innerHTML = finished.map(c => {
+      const roundsCount = (c.rounds && c.rounds.length) || 0;
+      const highScore = getHighScore(c.rounds);
+
+      // Datums-Range für beendete Kampagnen (Start bis Ende)
+      let dateText = '';
+      if (c.start_date && c.end_date) {
+        dateText = `📅 ${formatDate(c.start_date)} – ${formatDate(c.end_date)}`;
+      } else if (c.start_date) {
+        dateText = `📅 Start: ${formatDate(c.start_date)}`;
+      }
+
+      return `
+        <div class="card-finished p-4 rounded-2xl shadow-sm border border-stone-300/50 flex justify-between items-center opacity-90">
+          <div>
+            <h3 class="font-bold text-stone-700 text-base">${c.name}</h3>
+            <p class="text-xs text-stone-500">${c.players && c.players.length > 0 ? 'Mit: ' + c.players.join(', ') : 'Solo-Kampagne'}</p>
+            ${dateText ? `<p class="text-[11px] text-stone-500 mt-0.5">${dateText}</p>` : ''}
+            <span class="inline-block mt-1 text-[10px] bg-stone-200 text-stone-700 font-semibold px-2 py-0.5 rounded-full">
+              Highscore: ${highScore} Punkte (${roundsCount} ${roundsCount === 1 ? 'Partie' : 'Partien'})
+            </span>
+          </div>
+          <button onclick="viewFinishedCampaign('${c.id}')" class="bg-stone-300 text-stone-800 text-xs font-bold px-3 py-2 rounded-xl hover:bg-stone-400 transition">
+            Ansehen
+            </button>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+// Hilfsfunktion zum Schließen (Inklusive Zurücksetzen von display)
+function closeOptionsModal() {
+  const optionsModal = document.getElementById('options-modal');
+  if (optionsModal) {
+    optionsModal.classList.add('hidden');
+    optionsModal.style.display = 'none'; // <-- Entfernt den Inline-Style explizit!
+  }
+}
+
+    // --- WERTUNG HINZUFÜGEN LOGIK ---
+
+   function addScore() {
+  console.log("addScore() wurde aufgerufen!");
+  
+  // WICHTIG: Bearbeitungs-Flags zurücksetzen
+  editingRoundIndex = null;
+  wasEditingRound = false;
+
+  // Modale NUR visuell verstecken (NIEMALS closeOptionsModal aufrufen!)
+  const optModal = document.getElementById('options-modal');
+  if (optModal) {
+    optModal.classList.add('hidden');
+    optModal.style.display = 'none';
+  }
+
+  const detailsModal = document.getElementById('campaign-details-modal');
+  if (detailsModal) {
+    detailsModal.classList.add('hidden');
+    detailsModal.style.display = 'none';
+  }
+
+  // Typen-sicherer Vergleich (String vs. Number abfangen)
+  const campaign = campaignsData.find(c => String(c.id) === String(selectedCampaignId));
+
+  // Standard-Datum auf HEUTE setzen
+  const dateInput = document.getElementById('score-date');
+  if (dateInput) {
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.value = today;
+  }
+
+  // Automatische Partie-Nummer ermitteln (Runden-Anzahl + 1)
+  const currentRoundsCount = (campaign && campaign.rounds) ? campaign.rounds.length : 0;
+  const gameNumInput = document.getElementById('score-game-number');
+  if (gameNumInput) {
+    gameNumInput.value = currentRoundsCount + 1;
+  }
+
+  // Alle Input-Felder für Punkte zurücksetzen
+  const inputs = document.querySelectorAll('.score-input');
+  inputs.forEach((input, index) => {
+    input.value = '';
+
+    // Live-Berechnung & Enter-Taste
+    input.removeEventListener('input', calculateTotalScore);
+    input.addEventListener('input', calculateTotalScore);
+
+    input.onkeydown = function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (index + 1 < inputs.length) {
+          inputs[index + 1].focus();
+          inputs[index + 1].select();
+        } else {
+          document.getElementById('btn-save-score')?.focus();
+        }
+      }
+    };
+  });
+
+  const liveScoreEl = document.getElementById('live-total-score');
+  if (liveScoreEl) liveScoreEl.textContent = '0';
+
+  // Modal verlässlich sichtbar machen
+  const scoreModal = document.getElementById('score-modal');
+  if (scoreModal) {
+    scoreModal.classList.remove('hidden');
+    scoreModal.style.display = 'flex';
+  }
+
+  setTimeout(() => {
+    if (typeof renderMatchUnlocksSelector === 'function') {
+      renderMatchUnlocksSelector();
+    }
+    
+    // Checkboxen leeren
+    const unlockCheckboxes = document.querySelectorAll('input[name="match_unlock"]');
+    unlockCheckboxes.forEach(cb => cb.checked = false);
+  }, 50);
+}
+
+    function closeScoresOverview() {
+  // 1. Details/Wertungs-Modal ausblenden
+  const detailsModal = document.getElementById('campaign-details-modal');
+  if (detailsModal) {
+    detailsModal.classList.add('hidden');
+    detailsModal.style.display = 'none';
+  }
+
+  // 2. Prüfen, ob eine Kampagne aktiv ist
+  if (!selectedCampaignId) {
+    showCampaignOverview();
+    return;
+  }
+
+  // 3. Kampagne direkt aus den Daten suchen & Options-Modal anzeigen (ohne Umwege)
+  const campaign = campaignsData.find(c => String(c.id) === String(selectedCampaignId));
+  const isFinished = campaign ? campaign.finished === true : false;
+
+  // Welches Options-Modal gehört geöffnet? (Beendet oder Aktiv)
+  const targetModalId = isFinished ? 'finished-options-modal' : 'options-modal';
+  const targetModal = document.getElementById(targetModalId);
+
+  if (targetModal) {
+    targetModal.classList.remove('hidden');
+    targetModal.style.display = 'flex';
+  } else {
+    // Fallback, falls das Modal-Element nicht gegriffen hat
+    openCampaign(selectedCampaignId);
+  }
+}
+
+function closeScoreModal() {
+  const modal = document.getElementById('score-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+  }
+
+  // Zurücksetzen des Bearbeitungs-Indexes
+  editingRoundIndex = null;
+
+  // Saubere Navigation zurück: Wenn wir aus einer Bearbeitung kamen -> zur Übersicht
+  if (wasEditingRound) {
+    wasEditingRound = false;
+    showScoresOverview();
+  } else if (selectedCampaignId) {
+    // Sonst zurück ins Kampagnen-Menü
+    const campaign = campaignsData.find(c => String(c.id) === String(selectedCampaignId));
+    if (campaign && campaign.finished) {
+      document.getElementById('finished-options-modal')?.classList.remove('hidden');
+    } else {
+      document.getElementById('options-modal')?.classList.remove('hidden');
+    }
+  }
+}
+
+    function calculateTotalScore() {
+      let total = 0;
+      document.querySelectorAll('.score-input').forEach(input => {
+        const val = parseInt(input.value) || 0;
+        total += val;
+      });
+      document.getElementById('live-total-score').textContent = total;
+      return total;
+    }
+
+    // Globale Variable für den Flow merken
+let wasEditingRound = false;
+
+async function saveScore() {
+  const campaign = campaignsData.find(c => String(c.id) === String(selectedCampaignId));
+  if (!campaign) return;
+
+  const dateVal = document.getElementById('score-date').value;
+  if (!dateVal) {
+    alert("Bitte wähle ein Datum aus!");
+    return;
+  }
+
+  const isEditing = typeof editingRoundIndex !== 'undefined' && editingRoundIndex !== null && editingRoundIndex >= 0;
+  const gameNumberInput = document.getElementById('score-game-number');
+  const gameNumberVal = parseInt(gameNumberInput ? gameNumberInput.value : 0) || 
+                        (isEditing ? campaign.rounds[editingRoundIndex].game_number : ((campaign.rounds || []).length + 1));
+
+  const saveBtn = document.getElementById('btn-save-score');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Speichert...";
+  }
+
+  const scoreData = {
+    game_number: gameNumberVal,
+    date: dateVal,
+    total_score: calculateTotalScore(),
+    scores: {},
+    unlocks: isEditing ? (campaign.rounds[editingRoundIndex].unlocks || []) : []
+  };
+
+  document.querySelectorAll('.score-input').forEach(input => {
+    const cat = input.dataset.cat;
+    const val = parseInt(input.value) || 0;
+    if (cat) scoreData.scores[cat] = val;
+  });
+
+  let updatedRounds = [...(campaign.rounds || [])];
+
+  if (isEditing) {
+    updatedRounds[editingRoundIndex] = scoreData;
+  } else {
+    updatedRounds.push(scoreData);
+  }
+
+  updatedRounds.sort((a, b) => (a.game_number || 0) - (b.game_number || 0));
+  const updatedTotalScore = updatedRounds.reduce((sum, r) => sum + (r.total_score || 0), 0);
+
+  try {
+    const { error } = await db
+      .from('dorfromantik_campaigns')
+      .update({
+        rounds: updatedRounds,
+        total_score: updatedTotalScore
+      })
+      .eq('id', selectedCampaignId);
+
+    if (error) throw error;
+
+    await fetchCampaigns();
+
+    // Merken für das Unlocks-Modal / Fortsetzen-Button
+    wasEditingRound = isEditing;
+
+    // 1. Punkte-Modal schließen
+    closeScoreModal();
+
+    // 2. Zustand der Bearbeitung zurücksetzen
+    editingRoundIndex = null;
+
+    // 3. IMMER das Freischalt-Fenster für diese Spielnummer öffnen
+    openUnlocksModal(gameNumberVal);
+
+  } catch (err) {
+    console.error("Fehler beim Speichern der Wertung:", err);
+    alert("Fehler beim Speichern: " + (err.message || err));
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Speichern";
+    }
+  }
+}
+
+let currentUnlocksGameNumber = null;
+
+function openUnlocksModal(gameNumber) {
+  currentUnlocksGameNumber = gameNumber;
+  
+  // Render-Logik für die Checkboxen
+  renderMatchUnlocksSelector();
+
+  const unlocksModal = document.getElementById('unlocks-modal');
+  if (unlocksModal) {
+    unlocksModal.classList.remove('hidden');
+    unlocksModal.style.display = 'flex';
+  }
+}
+
+async function saveMatchUnlocks() {
+  if (!selectedCampaignId || !currentUnlocksGameNumber) {
+    closeUnlocksModal();
+    if (wasEditingRound) {
+      wasEditingRound = false;
+      showScoresOverview();
+    } else {
+      openCampaign(selectedCampaignId);
+    }
+    return;
+  }
+
+  // Ausgewählte Checkboxen sammeln
+  const selectedUnlocks = [];
+  document.querySelectorAll('input[name="match_unlock"]:checked').forEach(cb => {
+    selectedUnlocks.push(cb.value);
+  });
+
+  const campaign = campaignsData.find(c => String(c.id) === String(selectedCampaignId));
+  if (!campaign) {
+    closeUnlocksModal();
+    if (wasEditingRound) {
+      wasEditingRound = false;
+      showScoresOverview();
+    } else {
+      openCampaign(selectedCampaignId);
+    }
+    return;
+  }
+
+  // Den soeben gespeicherten Spieltag suchen und Freischaltungen ergänzen
+  let updatedRounds = campaign.rounds || [];
+  const roundIndex = updatedRounds.findIndex(r => r.game_number === currentUnlocksGameNumber);
+
+  if (roundIndex !== -1) {
+    updatedRounds[roundIndex].unlocks = selectedUnlocks;
+
+    try {
+      await db
+        .from('dorfromantik_campaigns')
+        .update({ rounds: updatedRounds })
+        .eq('id', selectedCampaignId);
+
+      await fetchCampaigns();
+    } catch (err) {
+      console.error("Fehler beim Speichern der Freischaltungen:", err);
+    }
+  }
+
+  // Merken, ob wir im Bearbeitungsmodus waren
+  const wasEditing = wasEditingRound;
+
+  // Unlocks-Modal schließen (ohne verfrühte Navigationslogik)
+  const unlocksModal = document.getElementById('unlocks-modal');
+  if (unlocksModal) {
+    unlocksModal.classList.add('hidden');
+    unlocksModal.style.display = 'none';
+  }
+
+  // Flag zurücksetzen
+  wasEditingRound = false;
+
+  // ZIEL-WEICHE: Punktgenaues Routing
+  if (wasEditing) {
+    showScoresOverview();             // Bei Bearbeitung zurück zur Wertungs-Übersicht
+  } else {
+    openCampaign(selectedCampaignId); // Bei neuer Partie ins Kampagnen-Menü
+  }
+}
+
+function closeUnlocksModal() {
+  const unlocksModal = document.getElementById('unlocks-modal');
+  if (unlocksModal) {
+    unlocksModal.classList.add('hidden');
+    unlocksModal.style.display = 'none';
+  }
+}
+
+const campaignUnlockables = [
+  "Auf Erfolgsspur",
+  "Bahnhof",
+  "Ballon - Startplatz",
+  "Baustelle",
+  "Erntefest",
+  "Fahnenfest",
+  "Goldenes Herz",
+  "Hafen",
+  "Herzenswünsche",
+  "Lokomotive",
+  "Rote Herzen",
+  "Schiff",
+  "Wachturm",
+  "Waldhütte"
+];
+
+// Rendert die Checkboxen im Partie-Dialog
+function renderMatchUnlocksSelector() {
+  const container = document.getElementById('match-unlocks-selector');
+  if (!container) {
+    console.error("Fehler: Das Element mit der ID 'match-unlocks-selector' wurde im DOM nicht gefunden!");
+    return;
+  }
+
+  // 1. Sammle alle Keys, die in dieser Kampagne bereits freigeschaltet wurden
+  const campaign = campaignsData.find(c => String(c.id) === String(selectedCampaignId));
+  const alreadyUnlocked = new Set();
+  
+  if (campaign && campaign.rounds) {
+    campaign.rounds.forEach(round => {
+      if (round.unlocks && Array.isArray(round.unlocks)) {
+        round.unlocks.forEach(item => alreadyUnlocked.add(item));
+      }
+    });
+  }
+
+  // 2. Filtere die globale Liste (zeige nur das, was noch NICHT freigeschaltet ist)
+  const availableUnlockables = campaignUnlockables.filter(item => {
+    const key = item.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    return !alreadyUnlocked.has(key);
+  });
+
+  // 3. Fall, wenn alles freigeschaltet ist
+  if (availableUnlockables.length === 0) {
+    container.innerHTML = `<p class="col-span-2 text-center text-stone-400 py-3 italic text-xs">🎉 Alle Elemente dieser Kampagne sind bereits freigeschaltet!</p>`;
+    return;
+  }
+
+  // 4. Rendern der verbleibenden Elemente im neuen Kartendesign
+  container.innerHTML = availableUnlockables.map(item => {
+    const key = item.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    return `
+      <label class="flex items-center gap-2.5 p-3 bg-white rounded-xl border border-stone-200/80 text-xs font-semibold text-stone-700 cursor-pointer hover:bg-emerald-50/50 hover:border-emerald-300 transition shadow-sm">
+        <input type="checkbox" name="match_unlock" value="${key}" class="w-4 h-4 rounded border-stone-300 text-emerald-800 focus:ring-emerald-600 accent-[#2d5a43]">
+        <span class="truncate text-stone-700">${item}</span>
+      </label>
+    `;
+  }).join('');
+}
+
+// Wenn die Partie gespeichert wird, greifen wir die angehakten ab:
+function collectMatchUnlocksData() {
+  const checkboxes = document.querySelectorAll('input[name="match_unlock"]:checked');
+  const unlocks = {};
+  checkboxes.forEach(cb => {
+    unlocks[cb.value] = true; // Speichert, dass es freigeschaltet wurde
+  });
+  return unlocks;
+}
+
+async function selectCampaignPath(forkId, optionId) {
+  const campaign = campaignsData.find(c => String(c.id) === String(selectedCampaignId));
+  if (!campaign) {
+    console.error("Kampagne nicht gefunden!");
+    return;
+  }
+
+  if (!campaign.chosen_paths) {
+    campaign.chosen_paths = {};
+  }
+
+  const paths = campaign.chosen_paths;
+  const fId = String(forkId);
+  const nextForkId = String(Number(fId) + 1);
+
+  // Anzahl der gespielten Partien zum Zeitpunkt der Auswahl
+  const currentGamesPlayed = Array.isArray(campaign.scores) ? campaign.scores.length : 0;
+
+  // Sperr-Prüfung: 
+  // Gesperrt IST ES NUR, wenn:
+  // 1. Für diese Gabelung schon eine Wahl existiert UND seit der Wahl mindestens 1 weitere Partie gespielt wurde
+  // 2. ODER die FOLGE-Gabelung bereits gewählt wurde.
+  const choiceGame = paths[`gabelung_${fId}_game`];
+  const hasPlayedNextGame = choiceGame !== undefined && currentGamesPlayed > choiceGame;
+  const hasChosenNextFork = Boolean(paths[nextForkId] || paths[`gabelung_${nextForkId}`]);
+
+  const isLocked = hasPlayedNextGame || hasChosenNextFork;
+
+  if (isLocked) {
+    console.warn(`Gabelung ${forkId} ist eingerastet, da bereits eine Folgerunde gespielt oder die nächste Gabelung gewählt wurde.`);
+    return;
+  }
+
+  // Pfad und aktuelle Partie-Anzahl im Objekt speichern
+  campaign.chosen_paths[forkId] = optionId;
+  campaign.chosen_paths[`gabelung_${fId}`] = optionId;
+  campaign.chosen_paths[`gabelung_${fId}_game`] = currentGamesPlayed;
+
+  // Globale Variablen synchronisieren (falls vorhanden)
+  if (fId === '1') { if (typeof branch1 !== 'undefined') branch1 = optionId; if (typeof gabelung_1 !== 'undefined') gabelung_1 = optionId; }
+  if (fId === '2') { if (typeof branch2 !== 'undefined') branch2 = optionId; if (typeof gabelung_2 !== 'undefined') gabelung_2 = optionId; }
+  if (fId === '3') { if (typeof branch3 !== 'undefined') branch3 = optionId; if (typeof gabelung_3 !== 'undefined') gabelung_3 = optionId; }
+  if (fId === '4') { if (typeof branch4 !== 'undefined') branch4 = optionId; if (typeof gabelung_4 !== 'undefined') gabelung_4 = optionId; }
+  if (fId === '5') { if (typeof branch5 !== 'undefined') branch5 = optionId; if (typeof gabelung_5 !== 'undefined') gabelung_5 = optionId; }
+
+  // UI sofort aktualisieren
+  if (typeof showCampaignOverview === 'function') {
+    showCampaignOverview();
+  }
+
+  // In Supabase speichern
+  if (typeof db !== 'undefined' && db) {
+    try {
+      const { error } = await db
+        .from('dorfromantik_campaigns')
+        .update({ chosen_paths: campaign.chosen_paths })
+        .eq('id', campaign.id);
+
+      if (error) {
+        console.warn("Supabase Hinweis:", error.message);
+      }
+    } catch (err) {
+      console.error("Fehler beim Speichern der Abzweigung in Supabase:", err);
+    }
+  }
+}
+
+// Hilfsfunktion zum Wechseln der Route
+function setSelectedRoute(routeKey) {
+  const campaign = campaignsData.find(c => String(c.id) === String(selectedCampaignId));
+  if (campaign) {
+    campaign.selected_route = routeKey;
+    // Falls du Supabase/LocalStorage nutzt, hier speichern:
+    if (typeof saveCampaignData === 'function') {
+      saveCampaignData(campaign);
+    }
+  }
+  showCampaignOverview();
+}
+
+// Hilfsfunktion zum Freischalten/Wählen eines einzelnen Wegpunkts
+function toggleCampaignWaypoint(nodeId) {
+  const campaign = campaignsData.find(c => String(c.id) === String(selectedCampaignId));
+  if (!campaign) return;
+
+  const savedWaypoints = campaign.unlocked_waypoints || [];
+
+  // Bereits fest gespeicherte Wegpunkte können NIEMALS mehr abgewählt werden!
+  if (savedWaypoints.includes(nodeId)) {
+    return;
+  }
+
+  // Umschalten in der temporären Auswahl
+  const index = tempSelectedWaypoints.indexOf(nodeId);
+  if (index > -1) {
+    tempSelectedWaypoints.splice(index, 1);
+  } else {
+    tempSelectedWaypoints.push(nodeId);
+  }
+
+  // Übersicht neu rendern, um geänderte Auswahlen & Button-Status anzuzeigen
+  showCampaignOverview();
+}
+
+function showCampaignOverview() {
+  document.getElementById('options-modal')?.classList.add('hidden');
+  document.getElementById('finished-options-modal')?.classList.add('hidden');
+
+  const campaign = campaignsData.find(c => String(c.id) === String(selectedCampaignId));
+  if (!campaign) {
+    console.error("Kampagne nicht gefunden!");
+    return;
+  }
+
+  // Kombinieren aus fest gespeicherten und aktuell temporär gewählten Feldern
+  const savedWaypoints = campaign.unlocked_waypoints || [];
+  const chosenWaypoints = Array.from(new Set([...savedWaypoints, ...tempSelectedWaypoints]));
+
+  // 1. Gesamtschritte (Kreuze) & Fortschrittsprozent berechnen
+  let totalSteps = 0;
+  if (campaign.rounds && Array.isArray(campaign.rounds)) {
+    totalSteps = campaign.rounds.reduce((sum, round) => sum + getStepsFromScore(round.total_score || 0), 0);
+  }
+  const progressPercent = Math.min((totalSteps / 120) * 100, 100);
+
+  const container = document.getElementById('unlockables-checklist');
+  if (!container) return;
+
+  container.className = "w-full space-y-4";
+
+  // 2. Definition aller Knotenpunkte & Zusatzkosten (cost) relativ zum Elternknoten
+  const nodeDefs = {
+    s1: { id: 's1', name: 'Schachtel 1', baseSteps: 2, cost: 2, parents: [] },
+    s2: { id: 's2', name: 'Schachtel 2', baseSteps: 7, cost: 5, parents: ['s1'] },
+    
+    lagerhaus: { id: 'lagerhaus', name: 'Lagerhaus', baseSteps: 11, cost: 4, parents: ['s2'] },
+    zirkus:    { id: 'zirkus',    name: 'Zirkus',    baseSteps: 11, cost: 4, parents: ['s2'] },
+    
+    getreidetunnel: { id: 'getreidetunnel', name: 'Getreidetunnel', baseSteps: 17, cost: 6, parents: ['lagerhaus'] },
+    bahnwaerter:     { id: 'bahnwaerter',     name: 'Bahnwärter',     baseSteps: 17, cost: 6, parents: ['lagerhaus', 'zirkus'] },
+    damhirsch:       { id: 'damhirsch',       name: 'Damhirsch',       baseSteps: 17, cost: 6, parents: ['zirkus'] },
+
+    herz_a: { id: 'herz_a', name: 'Rotes Herz', baseSteps: 21, cost: 4, parents: ['getreidetunnel'] },
+    herz_b: { id: 'herz_b', name: 'Rotes Herz', baseSteps: 21, cost: 4, parents: ['bahnwaerter'] },
+    herz_c: { id: 'herz_c', name: 'Rotes Herz', baseSteps: 21, cost: 4, parents: ['damhirsch'] },
+
+    dorftunnel: { id: 'dorftunnel', name: 'Dorftunnel', baseSteps: 25, cost: 4, parents: ['herz_a'] },
+    schaeferin: { id: 'schaeferin', name: 'Schäferin',  baseSteps: 25, cost: 4, parents: ['herz_b'] },
+    burg:       { id: 'burg',       name: 'Burg',       baseSteps: 25, cost: 4, parents: ['herz_c'] },
+
+    waldtunnel: { id: 'waldtunnel', name: 'Waldtunnel', baseSteps: 35, cost: 10, parents: ['dorftunnel'] },
+    huegel:     { id: 'huegel',     name: 'Hügel',      baseSteps: 35, cost: 10, parents: ['schaeferin'] },
+    bauernhof:  { id: 'bauernhof',  name: 'Bauernhof',  baseSteps: 35, cost: 10, parents: ['burg'] },
+
+    wolke:  { id: 'wolke',  name: 'Wolke (Finale)',      baseSteps: 45,  cost: 10, parents: ['waldtunnel', 'huegel', 'bauernhof'] },
+    finale: { id: 'finale', name: 'Kampagne Abgeschlossen', baseSteps: 120, cost: 75, parents: ['wolke'] }
+  };
+
+  // Automatische Freischaltung für Schachtel 1 & 2
+  ['s1', 's2'].forEach(sId => {
+    const node = nodeDefs[sId];
+    if (totalSteps >= node.baseSteps && !chosenWaypoints.includes(sId)) {
+      chosenWaypoints.push(sId);
+      if (!savedWaypoints.includes(sId)) {
+        tempSelectedWaypoints.push(sId);
+      }
+    }
+  });
+
+  // 3. Exakte verbrauchte Kreuze summiert über alle gewählten Pfade berechnen
+  let usedSteps = 0;
+  Object.keys(nodeDefs).forEach(nodeId => {
+    if (chosenWaypoints.includes(nodeId)) {
+      usedSteps += nodeDefs[nodeId].cost;
+    }
+  });
+
+  const availableSteps = Math.max(0, totalSteps - usedSteps);
+
+  // 4. Exakte Pfadkosten-Berechnung im Netzwerk
+  const getMinStepsToNode = (targetId, visited = new Set()) => {
+    if (chosenWaypoints.includes(targetId)) return 0;
+    if (visited.has(targetId)) return Infinity;
+
+    visited.add(targetId);
+    const node = nodeDefs[targetId];
+    if (!node) return Infinity;
+
+    const children = Object.keys(nodeDefs).filter(id => nodeDefs[id].parents.includes(targetId));
+    const allNeighbors = [...(node.parents || []), ...children];
+
+    if (allNeighbors.length === 0) return node.cost;
+
+    let minCostToReachNode = Infinity;
+
+    allNeighbors.forEach(nId => {
+      if (chosenWaypoints.includes(nId)) {
+        minCostToReachNode = Math.min(minCostToReachNode, node.cost);
+      } else {
+        const costToNeighbor = getMinStepsToNode(nId, new Set(visited));
+        if (costToNeighbor !== Infinity) {
+          minCostToReachNode = Math.min(minCostToReachNode, costToNeighbor + node.cost);
+        }
+      }
+    });
+
+    return minCostToReachNode;
+  };
+
+  // Zustand prüfen
+  const getNodeState = (node) => {
+    const isSelected = chosenWaypoints.includes(node.id);
+    const isTempSelected = tempSelectedWaypoints.includes(node.id);
+    const isSaved = savedWaypoints.includes(node.id);
+
+    const children = Object.keys(nodeDefs).filter(id => nodeDefs[id].parents.includes(node.id));
+    const hasUnlockedNeighbor = node.parents.some(pId => chosenWaypoints.includes(pId)) ||
+                                children.some(cId => chosenWaypoints.includes(cId));
+
+    const neededFromCurrent = getMinStepsToNode(node.id);
+    const isAvailable = !isSelected && hasUnlockedNeighbor && (availableSteps >= neededFromCurrent);
+
+    return { isSelected, isTempSelected, isSaved, isAvailable, neededFromCurrent };
+  };
+
+// Renderer für interaktive Buttons (Kein Abschneiden mit ..., automatischer Zeilenumbruch)
+const renderNodeButton = (nodeId, icon = '') => {
+    const node = nodeDefs[nodeId];
+    if (!node) return '';
+
+    const { isSelected, isTempSelected, isSaved, isAvailable, neededFromCurrent } = getNodeState(node);
+
+    let btnStyle = "bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed opacity-60";
+    let onClickAttr = "";
+    let stepLabel = "";
+
+    if (isSaved) {
+      stepLabel = "✓";
+      btnStyle = "bg-emerald-700 text-white border-emerald-800 shadow-xs font-bold cursor-default";
+    } else if (isTempSelected) {
+      stepLabel = "✓";
+      btnStyle = "bg-emerald-500 text-white border-emerald-600 shadow-md font-bold hover:bg-emerald-600 cursor-pointer ring-2 ring-amber-400 animate-pulse";
+      onClickAttr = `onclick="toggleCampaignWaypoint('${node.id}')"`;
+    } else if (isAvailable) {
+      stepLabel = `${neededFromCurrent}`;
+      btnStyle = "bg-amber-100 text-amber-900 border-amber-400 font-bold hover:bg-amber-200 cursor-pointer ring-2 ring-amber-300";
+      onClickAttr = `onclick="toggleCampaignWaypoint('${node.id}')"`;
+    } else {
+      stepLabel = `${neededFromCurrent}`;
+    }
+
+    return `
+      <button ${onClickAttr} class="w-full py-1.5 px-0.5 sm:p-2 rounded-md sm:rounded-lg border text-[11px] sm:text-xs transition-all flex items-center justify-center gap-0.5 sm:gap-1 leading-tight ${btnStyle}">
+        ${icon ? `<span class="text-xs sm:text-sm shrink-0">${icon}</span>` : ''}
+        <span class="break-words text-center">${node.name}</span>
+        <span class="opacity-80 font-normal shrink-0">(${stepLabel})</span>
+      </button>
+    `;
+  };
+
+  // Routennetz HTML (Mobil optimiert)
+  const routesOverviewHTML = `
+  <div class="mt-2 sm:mt-4 p-1 sm:p-2 bg-white/70 rounded-xl sm:rounded-2xl border border-emerald-200/80 shadow-xs flex flex-col gap-2 sm:gap-3">
+    <div class="text-center flex flex-col items-center">
+      ${renderNodeButton('finale', '🏆')}
+      <span class="text-stone-400 text-[10px] my-0.5">▲</span>
+    </div>
+
+    <div class="text-center flex flex-col items-center">
+      <div class="w-full max-w-xs">${renderNodeButton('wolke', '☁️')}</div>
+      <span class="text-stone-400 text-[10px] my-0.5">▲</span>
+    </div>
+
+    <!-- 3er-Grid mit minimalem Innenabstand für maximale Button-Breite -->
+    <div class="grid grid-cols-3 gap-1 text-center">
+      <div class="p-0.5 sm:p-1.5 rounded-lg sm:rounded-xl border bg-stone-50/50 border-stone-200 flex flex-col-reverse gap-1 sm:gap-1.5">
+        ${renderNodeButton('getreidetunnel', '🚂')}
+        ${renderNodeButton('herz_a', '❤️')}
+        ${renderNodeButton('dorftunnel', '🏠')}
+        ${renderNodeButton('waldtunnel', '🌲')}
+      </div>
+
+      <div class="p-0.5 sm:p-1.5 rounded-lg sm:rounded-xl border bg-stone-50/50 border-stone-200 flex flex-col-reverse gap-1 sm:gap-1.5">
+        ${renderNodeButton('bahnwaerter', '👨‍✈️')}
+        ${renderNodeButton('herz_b', '❤️')}
+        ${renderNodeButton('schaeferin', '🐑')}
+        ${renderNodeButton('huegel', '⛰️')}
+      </div>
+
+      <div class="p-0.5 sm:p-1.5 rounded-lg sm:rounded-xl border bg-stone-50/50 border-stone-200 flex flex-col-reverse gap-1 sm:gap-1.5">
+        ${renderNodeButton('damhirsch', '🦌')}
+        ${renderNodeButton('herz_c', '❤️')}
+        ${renderNodeButton('burg', '🏰')}
+        ${renderNodeButton('bauernhof', '🌾')}
+      </div>
+    </div>
+
+    <div class="flex flex-col items-center gap-1 my-0.5 sm:my-1">
+      <span class="text-stone-400 text-[10px]">▲</span>
+      <div class="grid grid-cols-2 gap-2 sm:gap-3 w-full max-w-md">
+        ${renderNodeButton('lagerhaus', '🏭')}
+        ${renderNodeButton('zirkus', '🎪')}
+      </div>
+    </div>
+
+    <div class="flex flex-col items-center gap-1">
+      <span class="text-stone-400 text-[10px]">▲</span>
+      <div class="w-full max-w-[200px]">${renderNodeButton('s2', '📦')}</div>
+      <span class="text-stone-400 text-[10px]">▲</span>
+      <div class="w-full max-w-[200px]">${renderNodeButton('s1', '📦')}</div>
+    </div>
+  </div>
+`;
+
+  // 5. HTML: WEGPUNKTE (Eingeklappt, mobil-optimiert)
+  const achievementsListHTML = `
+    <details class="mt-2 sm:mt-4 bg-white rounded-xl sm:rounded-2xl border border-stone-200 shadow-xs overflow-hidden group">
+      <summary class="p-2.5 sm:p-3.5 font-bold text-stone-800 text-xs uppercase tracking-wider flex items-center justify-between cursor-pointer select-none bg-stone-50/50 hover:bg-stone-100/80 transition-colors">
+        <span class="flex items-center gap-1.5">
+          <span>🏆</span> Kampagnen-Erfolge (Wegpunkte)
+        </span>
+        <span class="text-stone-400 text-xs transition-transform duration-200 group-open:rotate-180">▼</span>
+      </summary>
+      
+      <div class="p-1.5 sm:p-3 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-xs border-t border-stone-100">
+        ${Object.keys(nodeDefs).map(nodeId => {
+          const node = nodeDefs[nodeId];
+          const isUnlocked = chosenWaypoints.includes(nodeId);
+          
+          let roundInfo = `${node.baseSteps} Kreuze`;
+          
+          if (isUnlocked && campaign.rounds && Array.isArray(campaign.rounds)) {
+            let runningSteps = 0;
+            const roundIndex = campaign.rounds.findIndex(round => {
+              runningSteps += getStepsFromScore(round.total_score || 0);
+              return runningSteps >= node.baseSteps;
+            });
+
+            if (roundIndex !== -1) {
+              roundInfo = `Partie ${roundIndex + 1}`;
+            } else if (['s1', 's2'].includes(nodeId)) {
+              roundInfo = "Start";
+            }
+          }
+
+          return `
+            <div class="flex items-center justify-between p-1.5 sm:p-2 rounded-lg sm:rounded-xl border ${
+              isUnlocked 
+                ? 'bg-emerald-50/60 border-emerald-300 text-emerald-950 font-medium' 
+                : 'bg-stone-50 border-stone-200 text-stone-400'
+            }">
+              <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                <span class="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-md border flex items-center justify-center text-[9px] sm:text-[10px] shrink-0 ${
+                  isUnlocked 
+                    ? 'bg-emerald-600 border-emerald-700 text-white font-bold' 
+                    : 'bg-white border-stone-300'
+                }">
+                  ${isUnlocked ? '✓' : ''}
+                </span>
+                <span class="truncate text-[11px] sm:text-xs ${isUnlocked ? '' : 'line-through opacity-70'}">${node.name}</span>
+              </div>
+              <span class="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full shrink-0 ${
+                isUnlocked 
+                  ? 'bg-emerald-100 text-emerald-800 font-bold' 
+                  : 'bg-stone-200 text-stone-500'
+              }">
+                ${roundInfo}
+              </span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </details>
+  `;
+
+  // 6. KARTEN-ERFOLGE: Aus allen Runden (round.unlocks) einsammeln
+  const unlockedCardKeys = new Set();
+  if (campaign.rounds && Array.isArray(campaign.rounds)) {
+    campaign.rounds.forEach(round => {
+      if (round.unlocks && Array.isArray(round.unlocks)) {
+        round.unlocks.forEach(key => unlockedCardKeys.add(key));
+      }
+    });
+  }
+
+  const cardAchievementsHTML = `
+    <details class="mt-2 bg-white rounded-xl sm:rounded-2xl border border-stone-200 shadow-xs overflow-hidden group">
+      <summary class="p-2.5 sm:p-3.5 font-bold text-stone-800 text-xs uppercase tracking-wider flex items-center justify-between cursor-pointer select-none bg-stone-50/50 hover:bg-stone-100/80 transition-colors">
+        <span class="flex items-center gap-1.5">
+          <span>🃏</span> Karten-Erfolge & Aufgaben
+        </span>
+        <span class="text-stone-400 text-xs transition-transform duration-200 group-open:rotate-180">▼</span>
+      </summary>
+      
+      <div class="p-1.5 sm:p-3 pt-2 grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-xs border-t border-stone-100">
+        ${(typeof campaignUnlockables !== 'undefined' ? campaignUnlockables : []).map(itemName => {
+          const key = itemName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+          const isUnlocked = unlockedCardKeys.has(key);
+
+          return `
+            <div class="flex items-center justify-between p-1.5 sm:p-2 rounded-lg sm:rounded-xl border transition-all ${
+              isUnlocked 
+                ? 'bg-emerald-50/60 border-emerald-300 text-emerald-950 font-medium shadow-2xs' 
+                : 'bg-stone-50 border-stone-200 text-stone-400'
+            }">
+              <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                <span class="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-md border flex items-center justify-center text-[9px] sm:text-[10px] shrink-0 ${
+                  isUnlocked 
+                    ? 'bg-emerald-600 border-emerald-700 text-white font-bold' 
+                    : 'bg-white border-stone-300'
+                }">
+                  ${isUnlocked ? '✓' : ''}
+                </span>
+                <span class="truncate text-[11px] sm:text-xs">${itemName}</span>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </details>
+  `;
+
+  // UI Rendern
+  const pathHTML = `
+    <div class="w-full p-1.5 sm:p-3 bg-emerald-50/80 rounded-xl sm:rounded-2xl border border-emerald-200/80 shadow-xs">
+      
+      <div class="mb-2 sm:mb-3 px-1">
+        <h3 class="font-bold text-emerald-950 text-xs sm:text-sm flex items-center gap-1.5">
+          <span>🗺️</span> Kampagnenfortschritt
+        </h3>
+        <p class="text-[10px] sm:text-[11px] text-emerald-700/80">Klicke verfügbare Felder an, um deine Route zu wählen</p>
+      </div>
+
+      <div class="w-full bg-stone-200/80 rounded-full h-2.5 sm:h-3 overflow-hidden border border-stone-300/50 mb-2 sm:mb-3">
+        <div class="bg-[#2d5a43] h-full transition-all duration-500 rounded-full" style="width: ${progressPercent}%"></div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-1.5 sm:gap-2 text-center text-xs font-bold mb-2">
+        <div class="px-1.5 py-1 sm:px-2 sm:py-1.5 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-lg sm:rounded-xl shadow-xs">
+          <span class="block text-[8px] sm:text-[9px] font-normal text-emerald-700 uppercase">Verfügbar</span>
+          ${availableSteps}
+        </div>
+        <div class="px-1.5 py-1 sm:px-2 sm:py-1.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-xl shadow-xs">
+          <span class="block text-[8px] sm:text-[9px] font-normal text-amber-700 uppercase">Verbraucht</span>
+          ${usedSteps}
+        </div>
+        <div class="px-1.5 py-1 sm:px-2 sm:py-1.5 bg-stone-200 text-stone-700 border border-stone-300 rounded-xl shadow-xs">
+          <span class="block text-[8px] sm:text-[9px] font-normal text-stone-500 uppercase">Gesamt</span>
+          ${totalSteps}
+        </div>
+      </div>
+
+      ${routesOverviewHTML}
+      ${achievementsListHTML}
+      ${cardAchievementsHTML}
+    </div>
+  `;
+
+  container.innerHTML = pathHTML;
+
+  const modal = document.getElementById('campaign-overview-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+  }
+}
+
+async function saveCampaignWaypoints(nextAction) {
+  const campaign = campaignsData.find(c => String(c.id) === String(selectedCampaignId));
+  if (!campaign) return;
+
+  // Speichern nur ausführen, wenn wirklich neue Wegpunkte ausgewählt wurden
+  if (tempSelectedWaypoints.length > 0) {
+    const currentSaved = campaign.unlocked_waypoints || [];
+    const updatedWaypoints = Array.from(new Set([...currentSaved, ...tempSelectedWaypoints]));
+
+    try {
+      const { error } = await db
+        .from('dorfromantik_campaigns')
+        .update({ unlocked_waypoints: updatedWaypoints })
+        .eq('id', selectedCampaignId);
+
+      if (error) throw error;
+
+      // Temporäre Auswahl zurücksetzen & Daten aktualisieren
+      tempSelectedWaypoints = [];
+      await fetchCampaigns();
+    } catch (err) {
+      console.error("Fehler beim Speichern der Wegpunkte:", err);
+      alert("Fehler beim Speichern: " + (err.message || err));
+      return; // Bei Fehler nicht weitermachen
+    }
+  }
+
+  // Kampagnen-Übersichts-Modal schließen
+  const modal = document.getElementById('campaign-overview-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+  }
+
+  // Gewünschte Folge-Aktion ausführen
+  if (nextAction === 'newMatch') {
+    addScore(); // Öffnet das Formular für die neue Partie
+  } else if (nextAction === 'finish') {
+    openCampaign(selectedCampaignId); // Führt zurück in die Hauptansicht der Kampagne
+  }
+}
+
+function toggleCampaignCardAchievement(cardId) {
+  const campaign = campaignsData.find(c => String(c.id) === String(selectedCampaignId));
+  if (!campaign) return;
+
+  if (!campaign.unlocked_cards) {
+    campaign.unlocked_cards = [];
+  }
+
+  const index = campaign.unlocked_cards.indexOf(cardId);
+  if (index > -1) {
+    campaign.unlocked_cards.splice(index, 1);
+  } else {
+    campaign.unlocked_cards.push(cardId);
+  }
+
+  // Falls vorhanden, Speichern-Funktion aufrufen (z.B. Supabase / LocalStorage)
+  if (typeof saveCampaignsData === 'function') {
+    saveCampaignsData();
+  }
+
+  // Ansicht aktualisieren
+  showCampaignOverview();
+}
+
+function viewFinishedCampaign(id) {
+  //  Das ist der Schlüssel: ID immer global als String merken!
+  selectedCampaignId = String(id);
+
+  const campaign = campaignsData.find(c => String(c.id) === String(id));
+  
+  if (campaign) {
+    document.getElementById('finished-modal-title').textContent = campaign.name;
+    document.getElementById('finished-modal-subtitle').textContent = 
+      campaign.players && campaign.players.length > 0 
+        ? 'Mit: ' + campaign.players.join(', ') 
+        : 'Solo-Kampagne';
+  }
+  
+  document.getElementById('finished-options-modal')?.classList.remove('hidden');
+}
+
+    function getHighScore(rounds) {
+  if (!rounds || rounds.length === 0) return 0;
+  return Math.max(...rounds.map(r => r.total_score || 0));
+}
+
+// Kampagnen-Details öffnen & Auswertung aufbauen
+function openCampaign(campaignId) {
+  selectedCampaignId = campaignId;
+  
+  // Sicheres Suchen durch String-Umwandlung
+  const campaign = campaignsData.find(c => String(c.id) === String(campaignId));
+  
+  if (!campaign) {
+    console.error("Kampagne nicht gefunden für ID:", campaignId);
+    return;
+  }
+
+  // Setzt Titel und Spieler-Namen im Modal
+  document.getElementById('options-modal-title').textContent = campaign.name;
+  document.getElementById('options-modal-subtitle').textContent = 
+    campaign.players && campaign.players.length > 0 ? `Mit: ${campaign.players.join(', ')}` : 'Solo-Kampagne';
+
+  // Blendet das Modal ein
+  const optionsModal = document.getElementById('options-modal');
+  if (optionsModal) {
+    optionsModal.classList.remove('hidden');
+    optionsModal.style.display = 'flex';
+  }
+}
+
+
+// Wertungs-Übersicht anzeigen
+// Wertungs-Übersicht anzeigen
+function showScoresOverview(isFinished = false) {
+  // 1. Andere Modale visuell verbergen (OHNE closeOptionsModal aufzurufen, um State nicht zu löschen)
+  const optModal = document.getElementById('options-modal');
+  if (optModal) {
+    optModal.classList.add('hidden');
+    optModal.style.display = 'none';
+  }
+
+  const finOptModal = document.getElementById('finished-options-modal');
+  if (finOptModal) {
+    finOptModal.classList.add('hidden');
+    finOptModal.style.display = 'none';
+  }
+
+  const campaign = campaignsData.find(c => String(c.id) === String(selectedCampaignId));
+
+  if (!campaign) {
+    console.error("❌ Kampagne nicht gefunden! ID:", selectedCampaignId);
+    return;
+  }
+
+  // Prüfen, ob die Kampagne beendet ist
+  const campaignIsFinished = isFinished || campaign.finished === true;
+
+  // Header-Daten setzen
+  const titleEl = document.getElementById('modal-campaign-title');
+  if (titleEl) titleEl.textContent = campaign.name;
+
+  const playersEl = document.getElementById('modal-campaign-players');
+  if (playersEl) {
+    playersEl.textContent = campaign.players && campaign.players.length > 0 
+      ? `Mit: ${campaign.players.join(', ')}` 
+      : 'Solo-Kampagne';
+  }
+
+  const rounds = campaign.rounds || [];
+  
+  // Falls noch keine Partien existieren
+  if (rounds.length === 0) {
+    document.getElementById('best-game-box')?.classList.add('hidden');
+    const roundsList = document.getElementById('rounds-list');
+    if (roundsList) roundsList.innerHTML = '<p class="text-xs text-stone-500 italic p-2">Noch keine Partien eingetragen.</p>';
+  } else {
+    document.getElementById('best-game-box')?.classList.remove('hidden');
+
+    // Höchste und niedrigste Punktzahl ermitteln
+    const maxScore = Math.max(...rounds.map(r => r.total_score || 0));
+    const minScore = Math.min(...rounds.map(r => r.total_score || 0));
+    const bestRound = rounds.find(r => (r.total_score || 0) === maxScore);
+
+    // Beste Partie oben befüllen
+    const bestMeta = document.getElementById('best-game-meta');
+    if (bestMeta && bestRound) bestMeta.textContent = `Partie ${bestRound.game_number || 1} • ${formatDate(bestRound.date)}`;
+    
+    const bestScore = document.getElementById('best-game-score');
+    if (bestScore && bestRound) bestScore.textContent = `${bestRound.total_score} Pkt.`;
+
+    const bestDetails = document.getElementById('best-game-details');
+    if (bestDetails && bestRound) {
+      bestDetails.innerHTML = renderScoreBlockHTML(bestRound.scores);
+      bestDetails.classList.add('hidden');
+    }
+
+    // Chronologische Liste aufbauen
+    const sortedRounds = [...rounds].sort((a, b) => (a.game_number || 0) - (b.game_number || 0));
+
+    const roundsList = document.getElementById('rounds-list');
+    if (roundsList) {
+      roundsList.innerHTML = sortedRounds.map((r, idx) => {
+        const isBest = (r.total_score || 0) === maxScore;
+        const isWorst = (r.total_score || 0) === minScore && rounds.length > 1 && !isBest;
+
+        let bgClass = "bg-white border-stone-200 hover:bg-stone-50";
+        let badge = "";
+
+        if (isBest) {
+          bgClass = "bg-amber-100/80 border-amber-300 hover:bg-amber-200/50";
+          badge = "👑 ";
+        } else if (isWorst) {
+          bgClass = "bg-rose-100/70 border-rose-300 hover:bg-rose-100";
+        }
+
+        const originalIndex = rounds.indexOf(r);
+
+        const actionButtonsHTML = campaignIsFinished ? '' : `
+          <div class="flex items-center space-x-1">
+            <button onclick="event.stopPropagation(); editRound(${originalIndex})" class="p-1 bg-white/80 hover:bg-white rounded-md border border-stone-200 shadow-xs text-xs" title="Bearbeiten">
+              ✏️
+            </button>
+            <button onclick="event.stopPropagation(); deleteRound(${originalIndex})" class="p-1 bg-red-100/80 hover:bg-red-200 rounded-md border border-red-200 shadow-xs text-red-700 text-xs" title="Löschen">
+              🗑️
+            </button>
+          </div>
+        `;
+
+        return `
+          <div class="border rounded-xl p-3 transition shadow-sm cursor-pointer ${bgClass}" onclick="toggleScoreDetails('round-${idx}')">
+            <div class="flex justify-between items-center text-xs font-semibold">
+              <div class="flex items-center space-x-2">
+                <span>${badge}<strong>Partie ${r.game_number || (idx + 1)}</strong></span>
+                <span class="text-stone-400">•</span>
+                <span class="text-stone-500 font-normal">${formatDate(r.date)}</span>
+              </div>
+
+              <div class="flex items-center space-x-2">
+                <span class="text-sm font-bold text-stone-900 mr-1">${r.total_score} Pkt.</span>
+                ${actionButtonsHTML}
+              </div>
+            </div>
+            <div id="round-details-${idx}" class="hidden mt-3 pt-3 border-t border-stone-300/60">
+              ${renderScoreBlockHTML(r.scores)}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // "Neue Partie"-Button steuern
+  const addBtn = document.getElementById('btn-add-score-from-modal');
+  if (addBtn) {
+    addBtn.style.display = campaignIsFinished ? 'none' : 'inline-block';
+  }
+
+  // 2. Modal für Wertungsübersicht verlässlich einblenden
+  const detailsModal = document.getElementById('campaign-details-modal');
+  if (detailsModal) {
+    detailsModal.classList.remove('hidden');
+    detailsModal.style.display = 'flex'; // Zwingt das Modal zur korrekten Anzeige
+  }
+}
+
+// Ein- und Ausklappen der Partiedetails
+function toggleScoreDetails(target) {
+  let element;
+  if (target === 'best') {
+    element = document.getElementById('best-game-details');
+  } else {
+    element = document.getElementById(`round-details-${target.replace('round-', '')}`);
+  }
+  
+  if (element) {
+    element.classList.toggle('hidden');
+  }
+}
+
+// Generiert das HTML für die einzelnen Punkte-Kategorien im Wertungsblock
+function renderScoreBlockHTML(scores) {
+  if (!scores || Object.keys(scores).length === 0) {
+    return '<p class="text-stone-400 italic">Keine Einzelergebnisse vorhanden.</p>';
+  }
+
+  const block1 = ['wald_auftrag', 'feld_auftrag', 'dorf_auftrag', 'bahn_auftrag', 'fluss_auftrag'];
+  const block2 = ['wald_fahnen_laengste', 'feld_fahnen_laengste', 'dorf_fahnen_laengste', 'bahn_fahnen_laengste', 'fluss_fahnen_laengste'];
+  const block3 = [
+    'rote_herzen', 'zirkus', 'bahnwaerter', 'schaeferin', 'huegel', 'baustelle', 
+    'ballon_startplatz', 'goldenes_herz', 'waldhuette', 'erntefest', 'wachturm', 
+    'lokomotive', 'schiff', 'bahnhof', 'hafen', 'grosse_muehle', 'fotograf', 'kornspeicher', 'schule'
+  ];
+
+  const labelMap = {
+    wald_auftrag: "🌲 Wald Aufträge",
+    feld_auftrag: "🌾 Feld Aufträge",
+    dorf_auftrag: "🏠 Dorf Aufträge",
+    bahn_auftrag: "🚂 Bahn Aufträge",
+    fluss_auftrag: "🌊 Fluss Aufträge",
+    wald_fahnen_laengste: "🌲 Wald (Fahnen/Längst.)",
+    feld_fahnen_laengste: "🌾 Feld (Fahnen/Längst.)",
+    dorf_fahnen_laengste: "🏠 Dorf (Fahnen/Längst.)",
+    bahn_fahnen_laengste: "🚂 Bahn (Fahnen/Längst.)",
+    fluss_fahnen_laengste: "🌊 Fluss (Fahnen/Längst.)",
+    rote_herzen: "❤️ Rote Herzen",
+    zirkus: "🎪 Zirkus",
+    bahnwaerter: "🛤️ Bahnwärter",
+    schaeferin: "🐑 Schäferin",
+    huegel: "⛰️ Hügel",
+    baustelle: "🏗️ Baustelle",
+    ballon_startplatz: "🎈 Ballon-Startplatz",
+    goldenes_herz: "💛 Goldenes Herz",
+    waldhuette: "🏡 Waldhütte",
+    erntefest: "🌻 Erntefest",
+    wachturm: "🏰 Wachturm",
+    lokomotive: "🚂 Lokomotive",
+    schiff: "⛵ Schiff",
+    bahnhof: "🚉 Bahnhof",
+    hafen: "⚓ Hafen",
+    grosse_muehle: "⚙️ Die Große Mühle",
+    fotograf: "📷 Der Fotograf",
+    kornspeicher: "🌾 Kornspeicher",
+    schule: "🏫 Schule"
+  };
+
+  let html = '<div class="space-y-3 text-[11px] text-stone-700">';
+
+  // Standard-Block für Aufträge & Fahnen (einspaltig)
+  function renderSubBlock(keys, title) {
+    let subSum = 0;
+    let blockHtml = '';
+    let hasValues = false;
+
+    keys.forEach(key => {
+      const val = scores[key];
+      if (val !== undefined && val !== null) {
+        subSum += val;
+        hasValues = true;
+        const niceLabel = labelMap[key] || key;
+        blockHtml += `
+          <div class="flex justify-between border-b border-stone-200/60 pb-0.5">
+            <span class="truncate">${niceLabel}</span>
+            <span class="font-bold ml-1">${val}</span>
+          </div>
+        `;
+      }
+    });
+
+    if (!hasValues) return '';
+
+    return `
+      <div class="space-y-1">
+        <div class="font-bold text-[10px] text-stone-400 uppercase tracking-wider mb-1">${title}</div>
+        ${blockHtml}
+        <div class="flex justify-between border-t border-stone-300 pt-1 mt-1 font-bold text-stone-900">
+          <span>Zwischensumme</span>
+          <span>${subSum}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // Spezieller Block 3 für Sonderpunkte & Erweiterungen (zweispaltig)
+  function renderTwoColumnBlock(keys, title) {
+    let subSum = 0;
+    let blockHtml = '';
+    let hasValues = false;
+
+    // Nur Elemente filtern und rendern, die auch tatsächlich einen Wert haben
+    const activeKeys = keys.filter(key => {
+      const val = scores[key];
+      return val !== undefined && val !== null;
+    });
+
+    activeKeys.forEach(key => {
+      const val = scores[key];
+      subSum += val;
+      hasValues = true;
+      const niceLabel = labelMap[key] || key;
+      blockHtml += `
+        <div class="flex justify-between border-b border-stone-200/60 pb-0.5 pr-2">
+          <span class="truncate mr-1">${niceLabel}</span>
+          <span class="font-bold shrink-0">${val}</span>
+        </div>
+      `;
+    });
+
+    if (!hasValues) return '';
+
+    // Berechnet dynamisch die Zeilenanzahl für die Spaltenaufteilung
+    const rowCount = Math.ceil(activeKeys.length / 2);
+
+    return `
+      <div class="space-y-1">
+        <div class="font-bold text-[10px] text-stone-400 uppercase tracking-wider mb-1">${title}</div>
+        <div class="grid grid-flow-col grid-cols-2 gap-x-4 gap-y-1" style="grid-template-rows: repeat(${rowCount}, minmax(0, auto));">
+          ${blockHtml}
+        </div>
+        <div class="flex justify-between border-t border-stone-300 pt-1 mt-1 font-bold text-stone-900">
+          <span>Zwischensumme</span>
+          <span>${subSum}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // Blöcke ausgeben
+  html += renderSubBlock(block1, 'Aufträge');
+  html += renderSubBlock(block2, 'Fahnen & Längste');
+  html += renderTwoColumnBlock(block3, 'Sonderpunkte & Erweiterungen');
+
+  // Gesamtsumme
+  const total = scores.total_score || Object.values(scores).reduce((a, b) => a + (typeof b === 'number' ? b : 0), 0);
+  
+  html += `
+    <div class="flex justify-between border-t-2 border-emerald-800 pt-2 mt-2 font-black text-xs text-emerald-900">
+      <span>Gesamtpunktzahl</span>
+      <span>${scores.total_score !== undefined ? scores.total_score : total} Pkt.</span>
+    </div>
+  `;
+
+  html += '</div>';
+  return html;
+}
+
+// Partie aus der Kampagne löschen
+async function deleteRound(roundIndex) {
+  const campaign = campaignsData.find(c => c.id === selectedCampaignId);
+  if (!campaign || !campaign.rounds || !campaign.rounds[roundIndex]) return;
+
+  const roundNumber = campaign.rounds[roundIndex].game_number || (roundIndex + 1);
+
+  if (!confirm(`Möchtest du Partie ${roundNumber} wirklich unwiderruflich löschen?`)) {
+    return;
+  }
+
+  // Runde aus dem Array entfernen
+  campaign.rounds.splice(roundIndex, 1);
+
+  try {
+    // In Supabase aktualisieren
+    const { error } = await db
+      .from('dorfromantik_campaigns')
+      .update({ rounds: campaign.rounds })
+      .eq('id', selectedCampaignId);
+
+    if (error) throw error;
+
+    // Ansicht im Modal sofort aktualisieren
+    showScoresOverview();
+
+  } catch (err) {
+    console.error("Fehler beim Löschen der Partie:", err);
+    alert("Fehler beim Löschen: " + err.message);
+  }
+}
+
+// Partie-Gesamtwert manuell anpassen/korrigieren
+function editRound(roundIndex) {
+  const campaign = campaignsData.find(c => String(c.id) === String(selectedCampaignId));
+  if (!campaign || !campaign.rounds || !campaign.rounds[roundIndex]) return;
+
+  const currentRound = campaign.rounds[roundIndex];
+  
+  // Globale Zustände für Bearbeitung setzen
+  editingRoundIndex = roundIndex;
+  wasEditingRound = true;
+
+  // Options-Modal & Details-Modal visuell ausblenden (OHNE closeOptionsModal aufzurufen!)
+  const optModal = document.getElementById('options-modal');
+  if (optModal) {
+    optModal.classList.add('hidden');
+    optModal.style.display = 'none';
+  }
+
+  const detailsModal = document.getElementById('campaign-details-modal');
+  if (detailsModal) {
+    detailsModal.classList.add('hidden');
+    detailsModal.style.display = 'none';
+  }
+
+  // 1. Datum & Partie-Nummer vorausfüllen
+  const dateInput = document.getElementById('score-date');
+  if (dateInput) dateInput.value = currentRound.date || '';
+
+  const gameNumInput = document.getElementById('score-game-number');
+  if (gameNumInput) gameNumInput.value = currentRound.game_number || (roundIndex + 1);
+
+  // 2. Bestehende Punkte in die Inputs einfügen
+  const roundScores = currentRound.scores || {};
+  const inputs = document.querySelectorAll('.score-input');
+
+  inputs.forEach((input, index) => {
+    // Holt den Wert entweder über 'data-cat' (z.B. wald_auftrag) oder über die 'id' des Inputs
+    const catKey = input.dataset.cat || input.id;
+    const existingVal = roundScores[catKey];
+
+    // Wenn ein Wert existiert, eintragen, sonst leer/0 lassen
+    input.value = (existingVal !== undefined && existingVal !== null) ? existingVal : '';
+
+    // Live-Berechnung & Enter-Steuerung wieder anbinden
+    input.removeEventListener('input', calculateTotalScore);
+    input.addEventListener('input', calculateTotalScore);
+
+    input.onkeydown = function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (index + 1 < inputs.length) {
+          inputs[index + 1].focus();
+          inputs[index + 1].select();
+        } else {
+          document.getElementById('btn-save-score')?.focus();
+        }
+      }
+    };
+  });
+
+  // Live-Gesamtsumme oben im Header neu berechnen
+  if (typeof calculateTotalScore === 'function') {
+    calculateTotalScore();
+  }
+
+  // Modal für die Wertungseingabe verlässlich öffnen
+  const scoreModal = document.getElementById('score-modal');
+  if (scoreModal) {
+    scoreModal.classList.remove('hidden');
+    scoreModal.style.display = 'flex';
+  }
+
+  // Freischaltungen/Checkboxes vorausfüllen
+  setTimeout(() => {
+    if (typeof renderMatchUnlocksSelector === 'function') renderMatchUnlocksSelector();
+    
+    const unlockCheckboxes = document.querySelectorAll('input[name="match_unlock"]');
+    unlockCheckboxes.forEach(cb => {
+      cb.checked = Array.isArray(currentRound.unlocks) && currentRound.unlocks.includes(cb.value);
+    });
+  }, 50);
+}
+
+// Hilfsfunktion: Datum formatierten (JJJJ-MM-TT zu TT.MM.JJJJ)
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) return `${parts[2]}.${parts[1]}.${parts[0]}`;
+  return dateStr;
+}
+
+function closeCampaignDetailsModal() {
+  document.getElementById('campaign-details-modal').classList.add('hidden');
+}
+
+// Einklappen / Ausklappen der Details
+function toggleScoreDetails(target) {
+  let element;
+  if (target === 'best') {
+    element = document.getElementById('best-game-details');
+  } else {
+    element = document.getElementById(`round-details-${target.replace('round-', '')}`);
+  }
+  
+  if (element) {
+    element.classList.toggle('hidden');
+  }
+}
+
+// Hilfsfunktion: Datum formatieren (JJJJ-MM-TT zu TT.MM.JJJJ)
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) return `${parts[2]}.${parts[1]}.${parts[0]}`;
+  return dateStr;
+}
+
+
+// Checkliste ins Modal laden und Status aus Kampagnendaten auslesen
+function renderUnlockablesChecklist(campaign) {
+  const container = document.getElementById('unlockables-checklist');
+  // Falls in der Kampagne noch kein Objekt dafür existiert, leeres Objekt anlegen
+  if (!campaign.unlocked) campaign.unlocked = {};
+
+  container.innerHTML = campaignUnlockables.map(item => {
+    // Erzeugt einen sicheren ID-Schlüssel aus dem Namen
+    const key = item.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const isChecked = campaign.unlocked[key] ? 'checked' : '';
+    const bgChecked = isChecked ? 'bg-emerald-50 border-emerald-500 text-emerald-900 font-semibold' : 'bg-stone-50 border-stone-200 text-stone-700';
+
+    return `
+      <label class="flex items-center space-x-2 p-2 rounded-lg border transition cursor-pointer select-none hover:bg-stone-100 ${bgChecked}">
+        <input type="checkbox" 
+               class="w-4 h-4 text-emerald-800 rounded border-stone-300 focus:ring-emerald-700" 
+               ${isChecked} 
+               onchange="toggleUnlockable('${key}', this.checked)">
+        <span class="truncate">☑️ ${item}</span>
+      </label>
+    `;
+  }).join('');
+}
+
+// Speichern, wenn ein Häkchen gesetzt/entfernt wird
+function toggleUnlockable(key, isChecked) {
+  const campaign = campaignsData.find(c => c.id === selectedCampaignId);
+  if (!campaign) return;
+
+  if (!campaign.unlocked) campaign.unlocked = {};
+  campaign.unlocked[key] = isChecked;
+
+  // Hier könntest du das Ganze direkt an Supabase übergeben zum Speichern!
+  console.log(`Kampagne ${campaign.name}: ${key} auf ${isChecked} gesetzt`);
+  
+  // Aktualisiert die Optik sofort
+  renderUnlockablesChecklist(campaign);
+}
+
+
+function closeCampaignOverviewModal() {
+  // 1. Das Übersicht-Modal zwingend ausblenden
+  const modal = document.getElementById('campaign-overview-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+  }
+
+  // 2. Prüfen, ob eine ID vorhanden ist, und sauber zurückspringen
+  if (selectedCampaignId) {
+    if (typeof openCampaign === 'function') {
+      openCampaign(selectedCampaignId);
+    } else if (typeof showCampaignOptions === 'function') {
+      showCampaignOptions(selectedCampaignId);
+    }
+  } else {
+    console.warn("Keine selectedCampaignId vorhanden, um zur Kampagne zurückzukehren.");
+  }
+}
+
+function getAllCampaignUnlocks() {
+  const campaign = campaignsData.find(c => c.id === selectedCampaignId);
+  const unlockedKeys = new Set();
+
+  if (campaign && campaign.rounds) {
+    campaign.rounds.forEach(round => {
+      // Unterstützt sowohl Array als auch Objekt-Strukturen falls nötig
+      if (Array.isArray(round.unlocks)) {
+        round.unlocks.forEach(key => unlockedKeys.add(key));
+      } else if (round.unlocks && typeof round.unlocks === 'object') {
+        Object.keys(round.unlocks).forEach(key => unlockedKeys.add(key));
+      }
+    });
+  }
+  return unlockedKeys;
+}
+
+// Öffnet das Abfrage-Modal und setzt das Enddatum auf heute
+function openFinishCampaignModal() {
+  const dateInput = document.getElementById('finish-campaign-date-input');
+  if (dateInput) {
+    dateInput.value = new Date().toISOString().split('T')[0];
+  }
+  
+  const modal = document.getElementById('finish-campaign-modal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+// Schließt das Modal wieder
+function closeFinishedModal() {
+  document.getElementById('finished-options-modal').classList.add('hidden');
+}
+
+// Schließt das Abfrage-Modal
+function closeFinishCampaignModal() {
+  const modal = document.getElementById('finish-campaign-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+// Führt das Speichern in Supabase aus
+async function confirmFinishCampaign() {
+  const dateInput = document.getElementById('finish-campaign-date-input');
+  const endDate = dateInput && dateInput.value ? dateInput.value : new Date().toISOString().split('T')[0];
+
+  const finishBtn = document.getElementById('btn-confirm-finish');
+  finishBtn.disabled = true;
+  finishBtn.textContent = "Speichert...";
+
+  try {
+    const { data, error } = await db
+      .from('dorfromantik_campaigns')
+      .update({ 
+        finished: true, 
+        end_date: endDate 
+      })
+      .eq('id', selectedCampaignId)
+      .select();
+
+    if (error) {
+      console.error("Supabase Fehler beim Beenden:", error);
+      alert("Fehler beim Abschließen: " + error.message);
+    } else {
+      // Beide Modals schließen (das Abfragefenster und das Hauptmenü der Kampagne)
+      closeFinishCampaignModal();
+      const mainModal = document.getElementById('options-modal'); // Falls dein Haupt-Menü-Modal so heißt
+      if (mainModal) mainModal.classList.add('hidden');
+
+      // Kampagnen-Liste neu laden, damit die UI den Status aktualisiert
+      await fetchCampaigns();
+    }
+  } catch (err) {
+    console.error("Unerwarteter Fehler:", err);
+    alert("Verbindungsfehler: " + err.message);
+  } finally {
+    finishBtn.disabled = false;
+    finishBtn.textContent = "Abschließen";
+  }
+}
+
+function formatDate(dateString) {
+  if (!dateString) return "";
+  const parts = dateString.split('-');
+  if (parts.length !== 3) return dateString;
+  return `${parts[2]}.${parts[1]}.${parts[0]}`;
+}
+
+// Funktion zum Löschen der aktiven/ausgewählten beendeten Kampagne mit Sicherheitsabfrage
+async function deleteFinishedCampaign() {
+  // Das Eingabefenster fordert den Nutzer auf, "löschen" zu tippen
+  const confirmation = prompt('Um die Kampagne unwiderruflich zu löschen, tippe bitte das Wort "löschen" ein:');
+
+  // Prüfen, ob der Nutzer abgebrochen hat oder etwas anderes eingetippt hat (Groß-/Kleinschreibung egal dank .toLowerCase())
+  if (!confirmation || confirmation.trim().toLowerCase() !== 'löschen') {
+    alert('Löschvorgang abgebrochen. Das Wort stimmte nicht überein.');
+    return;
+  }
+
+  try {
+    // Supabase-Aufruf zum Löschen des Datensatzes über die ID
+    const { error } = await db
+      .from('dorfromantik_campaigns')
+      .delete()
+      .eq('id', selectedCampaignId);
+
+    if (error) {
+      throw error;
+    }
+
+    // Modal schließen
+    closeFinishedModal();
+
+    // Kampagnen-Liste im UI neu laden
+    if (typeof loadCampaigns === 'function') {
+      loadCampaigns();
+    } else {
+      location.reload();
+    }
+
+  } catch (err) {
+    console.error("Fehler beim Löschen der Kampagne:", err);
+    alert("Fehler beim Löschen: " + err.message);
+  }
+}
+
+
+  </script>
+</body>
+</html>
