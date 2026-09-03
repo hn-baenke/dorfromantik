@@ -568,7 +568,7 @@
     </div>
 
     <div class="space-y-2.5 pt-1">
-      <button onclick="showCampaignOverview()" class="w-full text-left bg-white hover:bg-stone-100 active:scale-[0.98] text-stone-800 p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-stone-300">
+      <button onclick="openFinishedCampaignOverview()" class="w-full text-left bg-white hover:bg-stone-100 active:scale-[0.98] text-stone-800 p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-stone-300">
         <div class="flex items-center gap-3">
           <span class="text-xl">🗺️</span>
           <div>
@@ -579,7 +579,7 @@
         <span>→</span>
       </button>
 
-      <button onclick="showScoresOverview()" class="w-full text-left bg-white hover:bg-stone-100 active:scale-[0.98] text-stone-800 p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-stone-300">
+      <button onclick="openFinishedScoresOverview()" class="w-full text-left bg-white hover:bg-stone-100 active:scale-[0.98] text-stone-800 p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-stone-300">
         <div class="flex items-center gap-3">
           <span class="text-xl">📊</span>
           <div>
@@ -1493,8 +1493,8 @@ function showCampaignOverview() {
     zirkus:    { id: 'zirkus',    name: 'Zirkus',    baseSteps: 11, cost: 4, parents: ['s2'] },
     
     getreidetunnel: { id: 'getreidetunnel', name: 'Getreidetunnel', baseSteps: 17, cost: 6, parents: ['lagerhaus'] },
-    bahnwaerter:     { id: 'bahnwaerter',     name: 'Bahnwärter',     baseSteps: 17, cost: 6, parents: ['lagerhaus', 'zirkus'] },
-    damhirsch:       { id: 'damhirsch',       name: 'Damhirsch',       baseSteps: 17, cost: 6, parents: ['zirkus'] },
+    bahnwaerter:    { id: 'bahnwaerter',    name: 'Bahnwärter',    baseSteps: 17, cost: 6, parents: ['lagerhaus', 'zirkus'] },
+    damhirsch:      { id: 'damhirsch',      name: 'Damhirsch',      baseSteps: 17, cost: 6, parents: ['zirkus'] },
 
     herz_a: { id: 'herz_a', name: 'Rotes Herz', baseSteps: 21, cost: 4, parents: ['getreidetunnel'] },
     herz_b: { id: 'herz_b', name: 'Rotes Herz', baseSteps: 21, cost: 4, parents: ['bahnwaerter'] },
@@ -1579,8 +1579,8 @@ function showCampaignOverview() {
     return { isSelected, isTempSelected, isSaved, isAvailable, neededFromCurrent };
   };
 
-// Renderer für interaktive Buttons (Kein Abschneiden mit ..., automatischer Zeilenumbruch)
-const renderNodeButton = (nodeId, icon = '') => {
+  // Renderer für interaktive Buttons
+  const renderNodeButton = (nodeId, icon = '') => {
     const node = nodeDefs[nodeId];
     if (!node) return '';
 
@@ -1614,7 +1614,7 @@ const renderNodeButton = (nodeId, icon = '') => {
     `;
   };
 
-  // Routennetz HTML (Mobil optimiert)
+  // Routennetz HTML
   const routesOverviewHTML = `
   <div class="mt-2 sm:mt-4 p-1 sm:p-2 bg-white/70 rounded-xl sm:rounded-2xl border border-emerald-200/80 shadow-xs flex flex-col gap-2 sm:gap-3">
     <div class="text-center flex flex-col items-center">
@@ -1627,7 +1627,6 @@ const renderNodeButton = (nodeId, icon = '') => {
       <span class="text-stone-400 text-[10px] my-0.5">▲</span>
     </div>
 
-    <!-- 3er-Grid mit minimalem Innenabstand für maximale Button-Breite -->
     <div class="grid grid-cols-3 gap-1 text-center">
       <div class="p-0.5 sm:p-1.5 rounded-lg sm:rounded-xl border bg-stone-50/50 border-stone-200 flex flex-col-reverse gap-1 sm:gap-1.5">
         ${renderNodeButton('getreidetunnel', '🚂')}
@@ -1668,7 +1667,7 @@ const renderNodeButton = (nodeId, icon = '') => {
   </div>
 `;
 
-  // 5. HTML: WEGPUNKTE (Eingeklappt, mobil-optimiert)
+  // Wegpunkte-Liste
   const achievementsListHTML = `
     <details class="mt-2 sm:mt-4 bg-white rounded-xl sm:rounded-2xl border border-stone-200 shadow-xs overflow-hidden group">
       <summary class="p-2.5 sm:p-3.5 font-bold text-stone-800 text-xs uppercase tracking-wider flex items-center justify-between cursor-pointer select-none bg-stone-50/50 hover:bg-stone-100/80 transition-colors">
@@ -1729,7 +1728,7 @@ const renderNodeButton = (nodeId, icon = '') => {
     </details>
   `;
 
-  // 6. KARTEN-ERFOLGE: Aus allen Runden (round.unlocks) einsammeln
+  // Karten-Erfolge
   const unlockedCardKeys = new Set();
   if (campaign.rounds && Array.isArray(campaign.rounds)) {
     campaign.rounds.forEach(round => {
@@ -1816,6 +1815,57 @@ const renderNodeButton = (nodeId, icon = '') => {
 
   const modal = document.getElementById('campaign-overview-modal');
   if (modal) {
+    // Finde den Button-Container am unteren Rand (sucht nach den beiden Speicher-Buttons anhand ihres Textes)
+    const allButtons = modal.querySelectorAll('button');
+    let saveButtonsContainer = null;
+    allButtons.forEach(btn => {
+      if (btn.textContent.includes('Speichern') && !saveButtonsContainer) {
+        saveButtonsContainer = btn.parentElement; 
+      }
+    });
+
+    let backBtn = document.getElementById('modal-back-to-finished-btn');
+
+    if (campaign.finished) {
+      // 1. Die alten Speicher-Buttons komplett verstecken
+      if (saveButtonsContainer) {
+        saveButtonsContainer.style.display = 'none';
+      }
+
+      // 2. Den "Zurück"-Button erstellen oder einblenden
+      if (!backBtn) {
+        backBtn = document.createElement('button');
+        backBtn.id = 'modal-back-to-finished-btn';
+        backBtn.className = 'w-full bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold p-3.5 rounded-xl transition text-center text-sm shadow-sm border border-stone-300 mt-3';
+        backBtn.textContent = 'Zurück';
+        backBtn.onclick = () => {
+          modal.classList.add('hidden');
+          modal.style.display = 'none';
+          const finishedModal = document.getElementById('finished-options-modal');
+          if (finishedModal) {
+            finishedModal.classList.remove('hidden');
+            finishedModal.style.setProperty('display', 'flex', 'important');
+          }
+        };
+        // Den Zurück-Button genau dorthin setzen, wo die Speicher-Buttons waren
+        if (saveButtonsContainer && saveButtonsContainer.parentNode) {
+          saveButtonsContainer.parentNode.insertBefore(backBtn, saveButtonsContainer);
+        } else {
+          modal.appendChild(backBtn);
+        }
+      } else {
+        backBtn.style.display = 'block';
+      }
+    } else {
+      // Bei laufenden Kampagnen: Speicher-Buttons zeigen, Zurück-Button verstecken
+      if (saveButtonsContainer) {
+        saveButtonsContainer.style.display = 'flex';
+      }
+      if (backBtn) {
+        backBtn.style.display = 'none';
+      }
+    }
+
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
   }
@@ -1888,20 +1938,36 @@ function toggleCampaignCardAchievement(cardId) {
 }
 
 function viewFinishedCampaign(id) {
-  //  Das ist der Schlüssel: ID immer global als String merken!
+  // 1. ID immer global als String merken
   selectedCampaignId = String(id);
 
   const campaign = campaignsData.find(c => String(c.id) === String(id));
   
   if (campaign) {
-    document.getElementById('finished-modal-title').textContent = campaign.name;
-    document.getElementById('finished-modal-subtitle').textContent = 
-      campaign.players && campaign.players.length > 0 
+    const titleEl = document.getElementById('finished-modal-title');
+    if (titleEl) titleEl.textContent = campaign.name;
+
+    const subTitleEl = document.getElementById('finished-modal-subtitle');
+    if (subTitleEl) {
+      subTitleEl.textContent = (campaign.players && campaign.players.length > 0) 
         ? 'Mit: ' + campaign.players.join(', ') 
         : 'Solo-Kampagne';
+    }
   }
   
-  document.getElementById('finished-options-modal')?.classList.remove('hidden');
+  // 2. Störende Haupt-Übersichten ausblenden
+  const overviewModal = document.getElementById('campaign-overview-modal');
+  if (overviewModal) {
+    overviewModal.classList.add('hidden');
+    overviewModal.style.display = 'none';
+  }
+
+  // 3. Finished-Options-Modal verlässlich anzeigen
+  const finishedModal = document.getElementById('finished-options-modal');
+  if (finishedModal) {
+    finishedModal.classList.remove('hidden');
+    finishedModal.style.setProperty('display', 'flex', 'important');
+  }
 }
 
     function getHighScore(rounds) {
@@ -2007,6 +2073,12 @@ function showScoresOverview(isFinished = false) {
     const roundsList = document.getElementById('rounds-list');
     if (roundsList) {
       roundsList.innerHTML = sortedRounds.map((r, idx) => {
+        // 🔍 Diagnose-Log für das Foto
+        console.log(`Partie ${r.game_number}:`, {
+          hasPhotoUrl: !!r.photo_url,
+          url: r.photo_url
+        });
+
         const isBest = (r.total_score || 0) === maxScore;
         const isWorst = (r.total_score || 0) === minScore && rounds.length > 1 && !isBest;
 
@@ -2033,8 +2105,21 @@ function showScoresOverview(isFinished = false) {
           </div>
         `;
 
+        // 📸 Foto-Vorschau generieren, falls ein Foto für diese Runde existiert
+        const photoPreviewHTML = r.photo_url ? `
+          <div class="mt-4 pt-3 border-t border-stone-200/80">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[11px] font-bold text-stone-500 uppercase tracking-wider">📸 Partie-Foto</span>
+              <span class="text-[10px] text-stone-400">Klicken zum Vergrößern</span>
+            </div>
+            <a href="${r.photo_url}" target="_blank" onclick="event.stopPropagation()" class="block group">
+              <img src="${r.photo_url}" alt="Partie-Foto" class="w-full h-40 object-cover rounded-lg border border-stone-300 group-hover:border-stone-400 shadow-2xs transition">
+            </a>
+          </div>
+        ` : '';
+
         return `
-          <div class="border rounded-xl p-3 transition shadow-sm cursor-pointer ${bgClass}" onclick="toggleScoreDetails('round-${idx}')">
+          <div class="border rounded-xl p-3 transition shadow-sm cursor-pointer ${bgClass}" onclick="toggleScoreDetails('round-details-${idx}')">
             <div class="flex justify-between items-center text-xs font-semibold">
               <div class="flex items-center space-x-2">
                 <span>${badge}<strong>Partie ${r.game_number || (idx + 1)}</strong></span>
@@ -2049,6 +2134,7 @@ function showScoresOverview(isFinished = false) {
             </div>
             <div id="round-details-${idx}" class="hidden mt-3 pt-3 border-t border-stone-300/60">
               ${renderScoreBlockHTML(r.scores)}
+              ${photoPreviewHTML}
             </div>
           </div>
         `;
@@ -2485,7 +2571,12 @@ function openFinishCampaignModal(e) {
 
 // Schließt das Modal wieder
 function closeFinishedModal() {
-  document.getElementById('finished-options-modal').classList.add('hidden');
+  const modal = document.getElementById('finished-options-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.style.display = 'none'; // Wichtig: Inline-Style überschreiben!
+  }
+  selectedCampaignId = null;
 }
 
 // Schließt das Abfrage-Modal und bringt den Nutzer zurück ins Menü
@@ -2555,6 +2646,26 @@ async function confirmFinishCampaign(e) {
       finishBtn.disabled = false;
       finishBtn.textContent = "Abschließen";
     }
+  }
+}
+
+function openFinishedCampaignOverview() {
+  const currentId = selectedCampaignId; // ID vor dem Schließen sichern
+  closeFinishedModal();               // Schließt das Menü (und setzt ID evtl. auf null)
+  
+  selectedCampaignId = currentId;     // ID sofort wiederherstellen!
+  showCampaignOverview();             // Jetzt sauber mit ID die Übersicht öffnen
+}
+
+function openFinishedScoresOverview() {
+  const currentId = selectedCampaignId; // ID kurz zwischenspeichern
+  closeFinishedModal();
+  
+  // Wenn es eine spezielle Funktion für die Runden/Wertungsübersicht gibt (z.B. mit ID), diese nutzen, 
+  // ansonsten sicherstellen, dass selectedCampaignId erhalten bleibt:
+  selectedCampaignId = currentId; 
+  if (typeof showScoresOverview === 'function') {
+    showScoresOverview();
   }
 }
 
