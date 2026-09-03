@@ -131,35 +131,39 @@
       <p id="options-modal-subtitle" class="text-xs text-stone-600">Wähle eine Aktion aus</p>
     </div>
 
+    <!-- Alle 4 Buttons gehören zusammen in DIESEN Container: -->
     <div class="space-y-2.5 pt-1">
-      <button onclick="addScore()" class="w-full text-left bg-emerald-800 hover:bg-emerald-700 active:scale-[0.98] text-white p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-emerald-700 cursor-pointer">
-  <div class="flex items-center gap-3">
-    <!-- Perfekt zentriertes und größeres Plus -->
-    <span class="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center shrink-0">
-  <svg class="w-5 h-5 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-  </svg>
-</span>
-    <div>
-      <div class="title-font text-base leading-tight">Wertung Hinzufügen</div>
-      <div class="text-[11px] font-normal text-emerald-100/80">Trage die Punkte einer neuen Runde ein</div>
-    </div>
-  </div>
-  <span>→</span>
-</button>
+      
+      <!-- 1. Wertung Hinzufügen -->
+      <button type="button" onclick="addScore(event)" class="w-full text-left bg-emerald-800 hover:bg-emerald-700 active:scale-[0.98] text-white p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-emerald-700 cursor-pointer">
+        <div class="flex items-center gap-3">
+          <span class="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+          </span>
+          <div>
+            <div class="title-font text-base leading-tight">Wertung Hinzufügen</div>
+            <div class="text-[11px] font-normal text-emerald-100/80">Trage die Punkte einer neuen Runde ein</div>
+          </div>
+        </div>
+        <span>→</span>
+      </button>
 
-      <button onclick="showCampaignOverview()" class="w-full text-left bg-white hover:bg-stone-100 active:scale-[0.98] text-stone-800 p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-stone-300 cursor-pointer">
+      <!-- 2. Kampagnen Überblick -->
+      <button type="button" onclick="showCampaignOverview()" class="w-full text-left bg-white hover:bg-stone-100 active:scale-[0.98] text-stone-800 p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-stone-300 cursor-pointer">
         <div class="flex items-center gap-3">
           <span class="text-xl">🗺️</span>
           <div>
-            <div class="title-font text-base text-emerald-900 leading-tight">Kampangen überblick</div>
+            <div class="title-font text-base text-emerald-900 leading-tight">Kampagnen überblick</div>
             <div class="text-[11px] font-normal text-stone-500">Freigeschaltete Plättchen & Erreichte Boni</div>
           </div>
         </div>
         <span>→</span>
       </button>
 
-      <button onclick="showScoresOverview()" class="w-full text-left bg-white hover:bg-stone-100 active:scale-[0.98] text-stone-800 p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-stone-300 cursor-pointer">
+      <!-- 3. Wertungen Überblick -->
+      <button type="button" onclick="showScoresOverview()" class="w-full text-left bg-white hover:bg-stone-100 active:scale-[0.98] text-stone-800 p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-stone-300 cursor-pointer">
         <div class="flex items-center gap-3">
           <span class="text-xl">📊</span>
           <div>
@@ -170,8 +174,8 @@
         <span>→</span>
       </button>
 
-      <!-- NEU: Kampagne abschließen -->
-      <button onclick="openFinishCampaignModal()" class="w-full text-left bg-white hover:bg-stone-100 active:scale-[0.98] text-stone-800 p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-stone-300 cursor-pointer">
+      <!-- 4. Kampagne abschließen -->
+      <button type="button" onclick="openFinishCampaignModal(event)" class="w-full text-left bg-white hover:bg-stone-100 active:scale-[0.98] text-stone-800 p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-stone-300 cursor-pointer">
         <div class="flex items-center gap-3">
           <span class="text-xl">🏁</span>
           <div>
@@ -181,6 +185,7 @@
         </div>
         <span>→</span>
       </button>
+
     </div>
 
     <div class="pt-2">
@@ -520,66 +525,41 @@
 
     <!-- Scrollbarer Inhalt -->
     <div class="p-2.5 sm:p-4 overflow-y-auto space-y-3 sm:space-y-4 text-stone-800 flex-1">
-      
-        <p class="text-xs sm:text-sm text-stone-600 italic px-1">
-          Klicke die Elemente an, die eure Gruppe in der Kampagne bereits freigeschaltet hat. Der Fortschritt wird automatisch gespeichert!
-        </p>
+      <p class="text-xs sm:text-sm text-stone-600 italic px-1">
+        Klicke die Elemente an, die eure Gruppe in der Kampagne bereits freigeschaltet hat. Der Fortschritt wird automatisch gespeichert!
+      </p>
 
-        <!-- Sektion: Module & Erfolge -->
-        <div class="bg-white rounded-xl p-2.5 sm:p-3.5 border border-stone-300 shadow-sm">
-          <h3 class="text-xs sm:text-sm font-bold text-emerald-900 uppercase tracking-wider mb-2">Kampagnenblatt (Erfolge)</h3>
-          
-          <!-- Grid für die Checkboxen im Look von Ankreuz-Kästchen -->
-          <div id="unlockables-checklist" class="w-full space-y-3">
-            <!-- Wird dynamisch befüllt -->
-          </div>
+      <!-- Sektion: Module & Erfolge -->
+      <div class="bg-white rounded-xl p-2.5 sm:p-3.5 border border-stone-300 shadow-sm">
+        <h3 class="text-xs sm:text-sm font-bold text-emerald-900 uppercase tracking-wider mb-2">Kampagnenblatt (Erfolge)</h3>
+        <div id="unlockables-checklist" class="w-full space-y-3">
+          <!-- Wird dynamisch befüllt -->
         </div>
-
+      </div>
     </div>
 
-    <!-- Footer: Beide Buttons im identischen, helleren Smaragdgrün -->
-<div class="p-3 sm:p-4 border-t border-stone-200 bg-stone-50 rounded-b-none sm:rounded-b-2xl grid grid-cols-2 gap-2.5 shrink-0">
-  <button onclick="saveCampaignWaypoints('newMatch')" 
-          class="w-full py-2.5 px-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer">
-    <span class="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center shrink-0">
-      <svg class="w-4 h-4 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-      </svg>
-    </span>
-    <span>Speichern & neue Partie</span>
-  </button>
-  
-  <button onclick="saveCampaignWaypoints('finish')" 
-          class="w-full py-2.5 px-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
-    <span>✓</span>
-    <span>Speichern & Fertig</span>
-  </button>
-</div>
-
-<!-- POP-UP MODAL: Kampagne abschließen -->
-<div id="finish-campaign-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
-  <div class="bg-[#F7F4EF] w-full max-w-sm rounded-2xl p-5 shadow-2xl border border-stone-300/80">
-    <h2 class="text-xl font-bold text-emerald-900 title-font mb-1">Kampagne beenden?</h2>
-    <p class="text-xs text-stone-600 mb-4">Möchtest du diese Kampagne wirklich abschließen? Du kannst danach das Enddatum festlegen.</p>
-    
-    <!-- Enddatum Container -->
-    <div class="mb-5">
-      <label class="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1">End-Datum</label>
-      <input type="date" id="finish-campaign-date-input" class="w-full p-2.5 border-2 border-emerald-800/30 rounded-xl bg-white text-stone-900 focus:outline-none focus:border-emerald-800 text-sm font-medium">
-    </div>
-
-    <div class="flex gap-2">
-      <button onclick="closeFinishCampaignModal()" class="flex-1 bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold py-2.5 rounded-xl text-sm transition">
-        Abbrechen
+    <!-- Footer -->
+    <div class="p-3 sm:p-4 border-t border-stone-200 bg-stone-50 rounded-b-none sm:rounded-b-2xl grid grid-cols-2 gap-2.5 shrink-0">
+      <button onclick="saveCampaignWaypoints('newMatch')" 
+              class="w-full py-2.5 px-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer">
+        <span class="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center shrink-0">
+          <svg class="w-4 h-4 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+        </span>
+        <span>Speichern & neue Partie</span>
       </button>
-      <button id="btn-confirm-finish" onclick="confirmFinishCampaign()" class="flex-1 bg-emerald-800 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow">
-        Abschließen
+      
+      <button onclick="saveCampaignWaypoints('finish')" 
+              class="w-full py-2.5 px-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+        <span>✓</span>
+        <span>Speichern & Fertig</span>
       </button>
     </div>
   </div>
-</div>
+</div> <!-- <-- HIER FEHLTE DAS SCHLIESSENDE DIV! -->
 
-    <!-- POP-UP MODAL: Beendete Kampagne (Nur Übersicht) -->
+<!-- POP-UP MODAL: Beendete Kampagne (Nur Übersicht) -->
 <div id="finished-options-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
   <div class="bg-[#F7F4EF] w-full max-w-sm rounded-2xl p-5 shadow-2xl border border-stone-300/80 space-y-4">
     <div>
@@ -588,7 +568,6 @@
     </div>
 
     <div class="space-y-2.5 pt-1">
-      <!-- Kampagnen-Überblick -->
       <button onclick="showCampaignOverview()" class="w-full text-left bg-white hover:bg-stone-100 active:scale-[0.98] text-stone-800 p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-stone-300">
         <div class="flex items-center gap-3">
           <span class="text-xl">🗺️</span>
@@ -600,7 +579,6 @@
         <span>→</span>
       </button>
 
-      <!-- Wertungen Überblick -->
       <button onclick="showScoresOverview()" class="w-full text-left bg-white hover:bg-stone-100 active:scale-[0.98] text-stone-800 p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-stone-300">
         <div class="flex items-center gap-3">
           <span class="text-xl">📊</span>
@@ -612,7 +590,6 @@
         <span>→</span>
       </button>
 
-      <!-- NEU: Kampagne löschen Button -->
       <button onclick="deleteFinishedCampaign()" class="w-full text-left bg-red-50 hover:bg-red-100 active:scale-[0.98] text-red-700 p-3.5 rounded-xl font-bold transition flex items-center justify-between shadow-sm border border-red-200">
         <div class="flex items-center gap-3">
           <span class="text-xl">🗑️</span>
@@ -625,10 +602,31 @@
       </button>
     </div>
     
-    <!-- Schließen-Button -->
     <button onclick="closeFinishedModal()" class="w-full bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold p-3 rounded-xl transition text-center text-sm">
       Schließen
     </button>
+  </div>
+</div>
+
+<!-- POP-UP MODAL: Kampagne abschließen -->
+<div id="finish-campaign-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+  <div class="bg-[#F7F4EF] w-full max-w-sm rounded-2xl p-5 shadow-2xl border border-stone-300/80">
+    <h2 class="text-xl font-bold text-emerald-900 title-font mb-1">Kampagne beenden?</h2>
+    <p class="text-xs text-stone-600 mb-4">Möchtest du diese Kampagne wirklich abschließen? Du kannst danach das Enddatum festlegen.</p>
+    
+    <div class="mb-5">
+      <label class="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1">End-Datum</label>
+      <input type="date" id="finish-campaign-date-input" class="w-full p-2.5 border-2 border-emerald-800/30 rounded-xl bg-white text-stone-900 focus:outline-none focus:border-emerald-800 text-sm font-medium">
+    </div>
+
+    <div class="flex gap-2">
+      <button type="button" onclick="closeFinishCampaignModal(event)" class="flex-1 bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold py-2.5 rounded-xl text-sm transition">
+        Abbrechen
+      </button>
+      <button type="button" id="btn-confirm-finish" onclick="confirmFinishCampaign(event)" class="flex-1 bg-emerald-800 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow">
+        Abschließen
+      </button>
+    </div>
   </div>
 </div>
 
@@ -638,6 +636,7 @@
     let selectedCampaignId = null;
     let editingRoundIndex = null; // null = Neue Partie, Zahl = Partie wird bearbeitet
     let tempSelectedWaypoints = [];
+    let currentUnlocksGameNumber = null;
 
     document.addEventListener('DOMContentLoaded', fetchCampaigns);
 
@@ -917,25 +916,34 @@ function closeOptionsModal() {
 
     // --- WERTUNG HINZUFÜGEN LOGIK ---
 
-   function addScore() {
+   function addScore(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  
   console.log("addScore() wurde aufgerufen!");
   
   // WICHTIG: Bearbeitungs-Flags zurücksetzen
   editingRoundIndex = null;
   wasEditingRound = false;
 
-  // Modale NUR visuell verstecken (NIEMALS closeOptionsModal aufrufen!)
-  const optModal = document.getElementById('options-modal');
-  if (optModal) {
-    optModal.classList.add('hidden');
-    optModal.style.display = 'none';
-  }
+  // 1. Alle störenden Modale rigoros schließen (inkl. campaign-details-modal!)
+  const modalsToHide = [
+    'options-modal',
+    'finished-options-modal',
+    'scores-overview-modal',
+    'campaign-overview-modal',
+    'campaign-details-modal'
+  ];
 
-  const detailsModal = document.getElementById('campaign-details-modal');
-  if (detailsModal) {
-    detailsModal.classList.add('hidden');
-    detailsModal.style.display = 'none';
-  }
+  modalsToHide.forEach(id => {
+    const modal = document.getElementById(id);
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.style.display = 'none';
+    }
+  });
 
   // Typen-sicherer Vergleich (String vs. Number abfangen)
   const campaign = campaignsData.find(c => String(c.id) === String(selectedCampaignId));
@@ -963,9 +971,9 @@ function closeOptionsModal() {
     input.removeEventListener('input', calculateTotalScore);
     input.addEventListener('input', calculateTotalScore);
 
-    input.onkeydown = function(e) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
+    input.onkeydown = function(eventKey) {
+      if (eventKey.key === 'Enter') {
+        eventKey.preventDefault();
         if (index + 1 < inputs.length) {
           inputs[index + 1].focus();
           inputs[index + 1].select();
@@ -979,11 +987,12 @@ function closeOptionsModal() {
   const liveScoreEl = document.getElementById('live-total-score');
   if (liveScoreEl) liveScoreEl.textContent = '0';
 
-  // Modal verlässlich sichtbar machen
+  // 2. Eingabe-Modal verlässlich anzeigen & Modus auf 'add' setzen
   const scoreModal = document.getElementById('score-modal');
   if (scoreModal) {
+    scoreModal.dataset.mode = 'add'; // MARKIERUNG FÜR NEUE PARTIE
     scoreModal.classList.remove('hidden');
-    scoreModal.style.display = 'flex';
+    scoreModal.style.setProperty('display', 'flex', 'important');
   }
 
   setTimeout(() => {
@@ -1035,20 +1044,41 @@ function closeScoreModal() {
     modal.style.display = 'none';
   }
 
-  // Zurücksetzen des Bearbeitungs-Indexes
-  editingRoundIndex = null;
-
-  // Saubere Navigation zurück: Wenn wir aus einer Bearbeitung kamen -> zur Übersicht
+  // NUR navigieren, wenn NICHT gerade der Speichervorgang läuft / Unlocks geöffnet werden!
+  // (Wenn man manuell auf 'Abbrechen' oder 'X' klickt):
   if (wasEditingRound) {
     wasEditingRound = false;
+    editingRoundIndex = null;
     showScoresOverview();
   } else if (selectedCampaignId) {
-    // Sonst zurück ins Kampagnen-Menü
+    editingRoundIndex = null;
+    
+    // Prüfen, ob es eine beendete Kampagne ist
     const campaign = campaignsData.find(c => String(c.id) === String(selectedCampaignId));
+    
     if (campaign && campaign.finished) {
-      document.getElementById('finished-options-modal')?.classList.remove('hidden');
+      const finishedModal = document.getElementById('finished-options-modal');
+      if (finishedModal) {
+        finishedModal.classList.remove('hidden');
+        finishedModal.style.display = 'flex';
+      }
     } else {
-      document.getElementById('options-modal')?.classList.remove('hidden');
+      // Nutze die vollwertige Funktion, um die Kampagnen-Detailansicht neu zu laden
+      if (typeof openCampaign === 'function') {
+        openCampaign(selectedCampaignId);
+      } else {
+        // Fallback: Hauptcontainer & Options-Modal sichtbar schalten
+        const detailsModal = document.getElementById('campaign-details-modal');
+        if (detailsModal) {
+          detailsModal.classList.remove('hidden');
+          detailsModal.style.display = 'block';
+        }
+        const optModal = document.getElementById('options-modal');
+        if (optModal) {
+          optModal.classList.remove('hidden');
+          optModal.style.display = 'flex';
+        }
+      }
     }
   }
 }
@@ -1076,10 +1106,15 @@ async function saveScore() {
     return;
   }
 
-  const isEditing = typeof editingRoundIndex !== 'undefined' && editingRoundIndex !== null && editingRoundIndex >= 0;
+  // Modus direkt und verlässlich über das Modal-Dataset & Variablen auslesen
+  const scoreModal = document.getElementById('score-modal');
+  const isEditing = scoreModal?.dataset.mode === 'edit' || 
+                    (typeof editingRoundIndex !== 'undefined' && editingRoundIndex !== null && editingRoundIndex >= 0) || 
+                    wasEditingRound;
+
   const gameNumberInput = document.getElementById('score-game-number');
   const gameNumberVal = parseInt(gameNumberInput ? gameNumberInput.value : 0) || 
-                        (isEditing ? campaign.rounds[editingRoundIndex].game_number : ((campaign.rounds || []).length + 1));
+                        (isEditing && editingRoundIndex !== null && campaign.rounds?.[editingRoundIndex] ? campaign.rounds[editingRoundIndex].game_number : ((campaign.rounds || []).length + 1));
 
   const saveBtn = document.getElementById('btn-save-score');
   if (saveBtn) {
@@ -1087,12 +1122,16 @@ async function saveScore() {
     saveBtn.textContent = "Speichert...";
   }
 
+  const existingUnlocks = (isEditing && editingRoundIndex !== null && campaign.rounds?.[editingRoundIndex]) 
+    ? (campaign.rounds[editingRoundIndex].unlocks || []) 
+    : [];
+
   const scoreData = {
     game_number: gameNumberVal,
     date: dateVal,
     total_score: calculateTotalScore(),
     scores: {},
-    unlocks: isEditing ? (campaign.rounds[editingRoundIndex].unlocks || []) : []
+    unlocks: existingUnlocks
   };
 
   document.querySelectorAll('.score-input').forEach(input => {
@@ -1103,7 +1142,7 @@ async function saveScore() {
 
   let updatedRounds = [...(campaign.rounds || [])];
 
-  if (isEditing) {
+  if (isEditing && editingRoundIndex !== null && editingRoundIndex >= 0) {
     updatedRounds[editingRoundIndex] = scoreData;
   } else {
     updatedRounds.push(scoreData);
@@ -1125,16 +1164,20 @@ async function saveScore() {
 
     await fetchCampaigns();
 
-    // Merken für das Unlocks-Modal / Fortsetzen-Button
+    // STATUS DEFINITIV IM GLOBALEN FLAG SICHERN
     wasEditingRound = isEditing;
 
-    // 1. Punkte-Modal schließen
-    closeScoreModal();
+    // 1. Punkte-Modal NUR visuell ausblenden (OHNE closeScoreModal aufzurufen!)
+    if (scoreModal) {
+      delete scoreModal.dataset.mode;
+      scoreModal.classList.add('hidden');
+      scoreModal.style.display = 'none';
+    }
 
-    // 2. Zustand der Bearbeitung zurücksetzen
+    // 2. Zustand der Bearbeitung erst DANACH zurücksetzen
     editingRoundIndex = null;
 
-    // 3. IMMER das Freischalt-Fenster für diese Spielnummer öffnen
+    // 3. Freischalt-Fenster öffnen
     openUnlocksModal(gameNumberVal);
 
   } catch (err) {
@@ -1148,7 +1191,6 @@ async function saveScore() {
   }
 }
 
-let currentUnlocksGameNumber = null;
 
 function openUnlocksModal(gameNumber) {
   currentUnlocksGameNumber = gameNumber;
@@ -1170,7 +1212,7 @@ async function saveMatchUnlocks() {
       wasEditingRound = false;
       showScoresOverview();
     } else {
-      openCampaign(selectedCampaignId);
+      showCampaignOverview();
     }
     return;
   }
@@ -1188,7 +1230,7 @@ async function saveMatchUnlocks() {
       wasEditingRound = false;
       showScoresOverview();
     } else {
-      openCampaign(selectedCampaignId);
+      showCampaignOverview();
     }
     return;
   }
@@ -1212,24 +1254,24 @@ async function saveMatchUnlocks() {
     }
   }
 
-  // Merken, ob wir im Bearbeitungsmodus waren
-  const wasEditing = wasEditingRound;
+  // Zustand sichern, bevor er zurückgesetzt wird
+  const isEditRouting = wasEditingRound;
 
-  // Unlocks-Modal schließen (ohne verfrühte Navigationslogik)
+  // Unlocks-Modal schließen
   const unlocksModal = document.getElementById('unlocks-modal');
   if (unlocksModal) {
     unlocksModal.classList.add('hidden');
     unlocksModal.style.display = 'none';
   }
 
-  // Flag zurücksetzen
+  // Flag für die nächste Aktion sauber zurücksetzen
   wasEditingRound = false;
 
-  // ZIEL-WEICHE: Punktgenaues Routing
-  if (wasEditing) {
-    showScoresOverview();             // Bei Bearbeitung zurück zur Wertungs-Übersicht
+  // ZIEL-WEICHE: Punktgenaues Routing je nach Ausgangs-Aktion
+  if (isEditRouting) {
+    showScoresOverview();   // Nach Editieren -> Wertungs-Übersicht
   } else {
-    openCampaign(selectedCampaignId); // Bei neuer Partie ins Kampagnen-Menü
+    showCampaignOverview(); // Nach neuer Partie -> Kampagnen-Übersicht
   }
 }
 
@@ -1896,6 +1938,7 @@ function openCampaign(campaignId) {
 // Wertungs-Übersicht anzeigen
 // Wertungs-Übersicht anzeigen
 function showScoresOverview(isFinished = false) {
+  console.trace("showScoresOverview wurde aufgerufen von:");
   // 1. Andere Modale visuell verbergen (OHNE closeOptionsModal aufzurufen, um State nicht zu löschen)
   const optModal = document.getElementById('options-modal');
   if (optModal) {
@@ -2284,9 +2327,10 @@ function editRound(roundIndex) {
     calculateTotalScore();
   }
 
-  // Modal für die Wertungseingabe verlässlich öffnen
+  // Modal für die Wertungseingabe verlässlich öffnen & Modus im DOM sichern
   const scoreModal = document.getElementById('score-modal');
   if (scoreModal) {
+    scoreModal.dataset.mode = 'edit'; // MARKIERUNG FÜR EDIT-MODUS
     scoreModal.classList.remove('hidden');
     scoreModal.style.display = 'flex';
   }
@@ -2415,35 +2459,65 @@ function getAllCampaignUnlocks() {
 }
 
 // Öffnet das Abfrage-Modal und setzt das Enddatum auf heute
-function openFinishCampaignModal() {
+function openFinishCampaignModal(e) {
+  if (e) {
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+  }
+
+  if (!selectedCampaignId) return false;
+
   const dateInput = document.getElementById('finish-campaign-date-input');
   if (dateInput) {
     dateInput.value = new Date().toISOString().split('T')[0];
   }
-  
+
   const modal = document.getElementById('finish-campaign-modal');
-  if (modal) modal.classList.remove('hidden');
+  if (modal) {
+    // WICHTIG: Nur classList.remove('hidden') nutzen!
+    modal.classList.remove('hidden');
+    modal.style.display = ''; // Zurücksetzen, falls zuvor style="display: none" gesetzt wurde
+  }
+
+  return false;
 }
+
 
 // Schließt das Modal wieder
 function closeFinishedModal() {
   document.getElementById('finished-options-modal').classList.add('hidden');
 }
 
-// Schließt das Abfrage-Modal
-function closeFinishCampaignModal() {
-  const modal = document.getElementById('finish-campaign-modal');
-  if (modal) modal.classList.add('hidden');
+// Schließt das Abfrage-Modal und bringt den Nutzer zurück ins Menü
+function closeFinishCampaignModal(e) {
+  if (e) {
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+  }
+
+  const finishModal = document.getElementById('finish-campaign-modal');
+  if (finishModal) {
+    finishModal.classList.add('hidden');
+    finishModal.style.display = ''; 
+  }
 }
 
 // Führt das Speichern in Supabase aus
-async function confirmFinishCampaign() {
+async function confirmFinishCampaign(e) {
+  if (e && typeof e.preventDefault === 'function') {
+    e.preventDefault();
+  }
+
+  if (!selectedCampaignId) return;
+
   const dateInput = document.getElementById('finish-campaign-date-input');
   const endDate = dateInput && dateInput.value ? dateInput.value : new Date().toISOString().split('T')[0];
 
   const finishBtn = document.getElementById('btn-confirm-finish');
-  finishBtn.disabled = true;
-  finishBtn.textContent = "Speichert...";
+  if (finishBtn) {
+    finishBtn.disabled = true;
+    finishBtn.textContent = "Speichert...";
+  }
 
   try {
     const { data, error } = await db
@@ -2459,20 +2533,28 @@ async function confirmFinishCampaign() {
       console.error("Supabase Fehler beim Beenden:", error);
       alert("Fehler beim Abschließen: " + error.message);
     } else {
-      // Beide Modals schließen (das Abfragefenster und das Hauptmenü der Kampagne)
+      // Modale visuell im DOM schließen & verstecken
       closeFinishCampaignModal();
-      const mainModal = document.getElementById('options-modal'); // Falls dein Haupt-Menü-Modal so heißt
-      if (mainModal) mainModal.classList.add('hidden');
+      
+      const mainModal = document.getElementById('options-modal');
+      if (mainModal) {
+        mainModal.classList.add('hidden');
+        mainModal.style.display = 'none';
+      }
 
-      // Kampagnen-Liste neu laden, damit die UI den Status aktualisiert
+      // Kampagnen neu laden & sauber zur Übersicht wechseln
       await fetchCampaigns();
+      selectedCampaignId = null; // ID zurücksetzen
+      showCampaignOverview();
     }
   } catch (err) {
     console.error("Unerwarteter Fehler:", err);
     alert("Verbindungsfehler: " + err.message);
   } finally {
-    finishBtn.disabled = false;
-    finishBtn.textContent = "Abschließen";
+    if (finishBtn) {
+      finishBtn.disabled = false;
+      finishBtn.textContent = "Abschließen";
+    }
   }
 }
 
@@ -2520,6 +2602,13 @@ async function deleteFinishedCampaign() {
     alert("Fehler beim Löschen: " + err.message);
   }
 }
+
+// Hilft uns herauszufinden, wer den Sprung zur Startseite auslöst
+const originalShow = showCampaignOverview;
+showCampaignOverview = function(...args) {
+  console.trace("showCampaignOverview wurde aufgerufen von:");
+  return originalShow.apply(this, args);
+};
 
 
   </script>
