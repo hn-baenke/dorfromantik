@@ -216,6 +216,9 @@
         </div>
       </div>
 
+      <!-- NEU: Fehler-Container direkt im Header-Bereich, damit er sofort ins Auge springt -->
+      <div id="score-error-message" class="hidden mt-3 p-3 bg-red-100 text-red-700 text-xs rounded-xl font-medium border border-red-200"></div>
+
       <!-- Scrollbarer Formular-Inhalt -->
       <div class="overflow-y-auto py-4 space-y-5 flex-1 pr-1">
         
@@ -408,35 +411,34 @@
           </div>
         </div>
 
-
       </div>
 
-<!-- NEU: Foto-Funktion Container (Sauber & Eindeutige IDs) -->
-<div>
-  <h3 class="text-xs font-bold text-emerald-900 uppercase tracking-wider mb-2">Partie-Foto</h3>
-  <div class="bg-white rounded-xl p-3 border border-stone-300 space-y-2">
-    <div class="grid grid-cols-2 gap-2">
-      <!-- Kamera Button -->
-      <label class="cursor-pointer bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 font-bold py-2.5 px-3 rounded-xl text-xs text-center transition flex items-center justify-center gap-1.5">
-        <span>📸</span> Kamera
-        <input type="file" accept="image/*" capture="environment" id="unique-camera-file-input" class="hidden" onchange="handleImageSelection(this)">
-      </label>
+      <!-- Partie-Foto Container -->
+      <div class="pt-2">
+        <h3 class="text-xs font-bold text-emerald-900 uppercase tracking-wider mb-2">Partie-Foto</h3>
+        <div class="bg-white rounded-xl p-3 border border-stone-300 space-y-2">
+          <div class="grid grid-cols-2 gap-2">
+            <!-- Kamera Button -->
+            <label class="cursor-pointer bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 font-bold py-2.5 px-3 rounded-xl text-xs text-center transition flex items-center justify-center gap-1.5">
+              <span>📸</span> Kamera
+              <input type="file" accept="image/*" capture="environment" id="unique-camera-file-input" class="hidden" onchange="handleImageSelection(this)">
+            </label>
 
-      <!-- Galerie Button -->
-      <label class="cursor-pointer bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 font-bold py-2.5 px-3 rounded-xl text-xs text-center transition flex items-center justify-center gap-1.5">
-        <span>🖼️</span> Galerie
-        <input type="file" accept="image/*" id="unique-gallery-file-input" class="hidden" onchange="handleImageSelection(this)">
-      </label>
-    </div>
-    <!-- Eindeutige ID für die Dateinamen-Anzeige -->
-    <div id="unique-photo-file-name" class="text-[11px] text-stone-500 text-center truncate italic hidden">
-      Kein Bild ausgewählt
-    </div>
-  </div>
-</div>
+            <!-- Galerie Button -->
+            <label class="cursor-pointer bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 font-bold py-2.5 px-3 rounded-xl text-xs text-center transition flex items-center justify-center gap-1.5">
+              <span>🖼️</span> Galerie
+              <input type="file" accept="image/*" id="unique-gallery-file-input" class="hidden" onchange="handleImageSelection(this)">
+            </label>
+          </div>
+          <!-- Dateinamen-Anzeige -->
+          <div id="unique-photo-file-name" class="text-[11px] text-stone-500 text-center truncate italic hidden">
+            Kein Bild ausgewählt
+          </div>
+        </div>
+      </div>
 
       <!-- Actions Footer -->
-      <div class="pt-3 border-t border-stone-300/80 flex gap-2">
+      <div class="pt-3 mt-2 border-t border-stone-300/80 flex gap-2">
         <button onclick="closeScoreModal()" class="flex-1 bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold py-2.5 rounded-xl text-sm transition">
           Abbrechen
         </button>
@@ -1153,11 +1155,13 @@ async function saveScore() {
 
   const dateVal = document.getElementById('score-date').value;
   if (!dateVal) {
-    alert("Bitte wähle ein Datum aus!");
+    showScoreError("Bitte wähle ein Datum aus!");
     return;
   }
 
-  // Modus direkt und verlässlich über das Modal-Dataset & Variablen auslesen
+  // Fehlermeldung zu Beginn zurücksetzen
+  hideScoreError();
+
   const scoreModal = document.getElementById('score-modal');
   const isEditing = scoreModal?.dataset.mode === 'edit' || 
                     (typeof editingRoundIndex !== 'undefined' && editingRoundIndex !== null && editingRoundIndex >= 0) || 
@@ -1174,8 +1178,8 @@ async function saveScore() {
   }
 
   try {
-    // 📸 Foto-Upload in einem eigenen Sicherheitsnetz! 
-    // Schlägt das Bild fehl, bricht NICHT mehr das ganze Speichern ab.
+    // 📸 SCHRITT 1: Foto-Upload in einer komplett eigenen Kapsel.
+    // Selbst wenn das Handy hier wegen Speichermangels stolpert, stürzt nichts ab!
     let photoUrl = null;
     const cameraInput = document.getElementById('unique-camera-file-input');
     const galleryInput = document.getElementById('unique-gallery-file-input');
@@ -1190,7 +1194,7 @@ async function saveScore() {
         const fileName = `campaign_${selectedCampaignId}_game_${gameNumberVal}_${Date.now()}.jpg`;
         const filePath = `public/${fileName}`;
 
-        const { data: uploadData, error: uploadError } = await db.storage
+        const { error: uploadError } = await db.storage
           .from('round-photos')
           .upload(filePath, compressedBlob, {
             contentType: 'image/jpeg',
@@ -1205,11 +1209,13 @@ async function saveScore() {
 
         photoUrl = publicUrlData.publicUrl;
       } catch (photoErr) {
-        console.error("Foto-Upload fehlgeschlagen:", photoErr);
-        alert("⚠️ Hinweis: Das Foto konnte nicht hochgeladen werden, aber deine Punkte und Runden-Daten werden trotzdem sicher gespeichert!");
+        console.warn("Foto-Upload abgefangen:", photoErr);
+        // Wir zeigen den Fehler im Modal an, aber das Modal BLEIBT OFFEN und die Punkte sicher!
+        showScoreError("⚠️ Das Foto konnte wegen eines Speicher-/Netzwerkfehlers nicht hochgeladen werden. Deine Punkte werden trotzdem gespeichert!");
+        // Kurze Pause, damit du den Hinweis kurz sehen kannst, bevor es weitergeht
+        await new Promise(resolve => setTimeout(resolve, 2500));
       }
     } else if (isEditing && editingRoundIndex !== null && campaign.rounds?.[editingRoundIndex]) {
-      // Wenn wir im Edit-Modus sind und kein neues Bild gewählt wurde, behalten wir das alte bei
       photoUrl = campaign.rounds[editingRoundIndex].photo_url || null;
     }
 
@@ -1247,7 +1253,7 @@ async function saveScore() {
 
     if (saveBtn) saveBtn.textContent = "Speichere Spieldaten...";
 
-    // Die Punkte werden jetzt GARANTIERT in Supabase gespeichert, egal ob das Foto geklappt hat oder nicht!
+    // 💾 SCHRITT 2: Hauptdaten in Supabase speichern
     const { error } = await db
       .from('dorfromantik_campaigns')
       .update({
@@ -1260,7 +1266,6 @@ async function saveScore() {
 
     await fetchCampaigns();
 
-    // DATEN FÜR DAS KAMPAGNEN-BANNER SETZEN (nur wenn es keine Bearbeitung war)
     if (!isEditing && typeof getStepsFromScore === 'function') {
       window.lastPlayedRoundInfo = {
         score: totalScoreVal,
@@ -1269,20 +1274,17 @@ async function saveScore() {
       };
     }
 
-    // STATUS DEFINITIV IM GLOBALEN FLAG SICHERN
     wasEditingRound = isEditing;
 
-    // 1. Punkte-Modal NUR visuell ausblenden
+    // Modal sauber schließen, da alles erfolgreich geklappt hat
     if (scoreModal) {
       delete scoreModal.dataset.mode;
       scoreModal.classList.add('hidden');
       scoreModal.style.display = 'none';
     }
 
-    // 2. Zustand der Bearbeitung erst DANACH zurücksetzen
     editingRoundIndex = null;
 
-    // 3. Inputs / Dateianzeige für das nächste Mal zurücksetzen
     if (cameraInput) cameraInput.value = '';
     if (galleryInput) galleryInput.value = '';
     const nameDisplay = document.getElementById('unique-photo-file-name');
@@ -1291,17 +1293,49 @@ async function saveScore() {
       nameDisplay.classList.add('hidden');
     }
 
-    // 4. Freischalt-Fenster öffnen
     openUnlocksModal(gameNumberVal);
 
   } catch (err) {
+    // 🛡️ SCHRITT 3: Hier landen wir NUR, wenn das Speichern der Punkte selbst fehlschlägt.
+    // Das Modal BLEIBT OFFEN, deine Eingaben sind noch da!
     console.error("Fehler beim Speichern der Wertung:", err);
-    alert("Fehler beim Speichern: " + (err.message || err));
+    showScoreError("❌ Fehler beim Speichern: " + (err.message || err) + ". Deine Eingaben bleiben erhalten.");
   } finally {
     if (saveBtn) {
       saveBtn.disabled = false;
       saveBtn.textContent = "Speichern";
     }
+  }
+}
+
+// Hilfsfunktionen für die Fehlerausgabe direkt im Modal
+function showScoreError(msg) {
+  let errBox = document.getElementById('score-error-message');
+  if (!errBox) {
+    // Falls das Element im HTML fehlt, erstellen wir es fliegend im Modal
+    const modal = document.getElementById('score-modal');
+    if (modal) {
+      errBox = document.createElement('div');
+      errBox.id = 'score-error-message';
+      errBox.className = 'mt-3 p-3 bg-red-100 text-red-700 text-sm rounded-lg font-medium';
+      modal.querySelector('.modal-content, form, div') || modal.appendChild(errBox);
+    }
+  }
+  if (errBox) {
+    errBox.textContent = msg;
+    errBox.classList.remove('hidden');
+    errBox.style.display = 'block';
+  } else {
+    alert(msg); // Fallback
+  }
+}
+
+function hideScoreError() {
+  const errBox = document.getElementById('score-error-message');
+  if (errBox) {
+    errBox.textContent = '';
+    errBox.classList.add('hidden');
+    errBox.style.display = 'none';
   }
 }
 
