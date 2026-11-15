@@ -3040,14 +3040,36 @@ async function uploadRoundPhoto(campaignId, file) {
   }
 }
 
-function handleImageSelection(input) {
+async function handleImageSelection(input) {
   if (input.files && input.files[0]) {
-    const fileName = input.files[0].name;
-    // Sucht das Name-Anzeige-Feld und zeigt den Dateinamen an
+    const file = input.files[0];
     const nameDisplay = document.getElementById('unique-photo-file-name');
+    
     if (nameDisplay) {
-      nameDisplay.textContent = `Ausgewählt: ${fileName}`;
+      nameDisplay.textContent = "Komprimiere Bild im Hintergrund...";
       nameDisplay.classList.remove('hidden');
+    }
+
+    try {
+      // Wir komprimieren das Bild SOFORT, um den Arbeitsspeicher des Handys zu entlasten!
+      const compressedBlob = await compressImage(file, 1200, 0.8);
+      
+      // Wir packen den komprimierten Blob als "Fake-File" wieder in das Input-Element, 
+      // damit saveScore() ihn später ganz normal verarbeiten kann.
+      const compressedFile = new File([compressedBlob], file.name || "partie_foto.jpg", { type: 'image/jpeg' });
+      
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(compressedFile);
+      input.files = dataTransfer.files;
+
+      if (nameDisplay) {
+        nameDisplay.textContent = `Ausgewählt & komprimiert: ${file.name}`;
+      }
+    } catch (err) {
+      console.error("Sofort-Komprimierung fehlgeschlagen:", err);
+      if (nameDisplay) {
+        nameDisplay.textContent = `⚠️ Fehler bei der Bildkomprimierung`;
+      }
     }
   }
 }
