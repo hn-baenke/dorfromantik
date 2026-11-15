@@ -419,10 +419,10 @@
         <div class="bg-white rounded-xl p-3 border border-stone-300 space-y-2">
           <div class="grid grid-cols-2 gap-2">
             <!-- Kamera Button -->
-            <label class="cursor-pointer bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 font-bold py-2.5 px-3 rounded-xl text-xs text-center transition flex items-center justify-center gap-1.5">
-              <span>📸</span> Kamera
-              <input type="file" accept="image/*" capture="environment" id="unique-camera-file-input" class="hidden" onchange="handleImageSelection(this)">
-            </label>
+<label class="cursor-pointer bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 font-bold py-2.5 px-3 rounded-xl text-xs text-center transition flex items-center justify-center gap-1.5">
+  <span>📸</span> Kamera
+  <input type="file" accept="image/jpeg,image/png" capture="environment" id="unique-camera-file-input" class="hidden" onchange="handleImageSelection(this)">
+</label>
 
             <!-- Galerie Button -->
             <label class="cursor-pointer bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 font-bold py-2.5 px-3 rounded-xl text-xs text-center transition flex items-center justify-center gap-1.5">
@@ -2970,19 +2970,21 @@ async function deleteFinishedCampaign() {
   }
 }
 
-async function compressImage(file, maxWidth = 1200, quality = 0.8) {
+async function compressImage(file, maxWidth = 1000, quality = 0.7) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
+    
     reader.onload = (event) => {
       const img = new Image();
       img.src = event.target.result;
+      
       img.onload = () => {
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
 
-        // Skalieren, falls breiter als maxWidth
+        // Härteres Limit, um den mobilen RAM zu schonen
         if (width > maxWidth) {
           height = Math.round((height * maxWidth) / width);
           width = maxWidth;
@@ -2993,7 +2995,7 @@ async function compressImage(file, maxWidth = 1200, quality = 0.8) {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Als JPEG komprimieren
+        // Als JPEG mit etwas angepasster Qualität komprimieren
         canvas.toBlob((blob) => {
           if (blob) {
             resolve(blob);
@@ -3002,8 +3004,50 @@ async function compressImage(file, maxWidth = 1200, quality = 0.8) {
           }
         }, 'image/jpeg', quality);
       };
+      
       img.onerror = (error) => reject(error);
     };
+    
+    reader.onerror = (error) => reject(error);
+  });
+}async function compressImage(file, maxWidth = 1000, quality = 0.7) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        // Härteres Limit, um den mobilen RAM zu schonen
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Als JPEG mit etwas angepasster Qualität komprimieren
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error("Fehler bei der Bildkomprimierung"));
+          }
+        }, 'image/jpeg', quality);
+      };
+      
+      img.onerror = (error) => reject(error);
+    };
+    
     reader.onerror = (error) => reject(error);
   });
 }
