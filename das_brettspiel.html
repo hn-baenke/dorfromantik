@@ -768,6 +768,7 @@ function getStepsFromScore(score) {
         const { data, error } = await db
           .from('dorfromantik_campaigns')
           .select('*')
+          .eq('game_type', 'brettspiel') // <--- Nur Kampagnen für Das Brettspiel laden
           .order('id', { ascending: false });
 
         if (error) {
@@ -853,7 +854,8 @@ function getStepsFromScore(score) {
 
       const newCampaign = {
         name: name,
-        start_date: start_date, // <--- Hier wird das Start-Datum mitgespeichert
+        game_type: 'brettspiel', // <--- Spielmodus für die zentrale Tabelle mitgeben
+        start_data: start_date,  // <--- Hier wird das Start-Datum mitgespeichert
         players: currentPlayers,
         finished: false,
         total_score: 0,
@@ -1172,34 +1174,40 @@ async function saveScore() {
   }
 
   try {
-    // 📸 Foto-Upload verarbeiten, falls eine Datei ausgewählt wurde
+    // 📸 Foto-Upload in einem eigenen Sicherheitsnetz! 
+    // Schlägt das Bild fehl, bricht NICHT mehr das ganze Speichern ab.
     let photoUrl = null;
     const cameraInput = document.getElementById('unique-camera-file-input');
     const galleryInput = document.getElementById('unique-gallery-file-input');
     const selectedFile = (cameraInput && cameraInput.files[0]) || (galleryInput && galleryInput.files[0]);
 
     if (selectedFile) {
-      if (saveBtn) saveBtn.textContent = "Komprimiere Bild...";
-      const compressedBlob = await compressImage(selectedFile);
-      
-      if (saveBtn) saveBtn.textContent = "Lade Bild hoch...";
-      const fileName = `campaign_${selectedCampaignId}_game_${gameNumberVal}_${Date.now()}.jpg`;
-      const filePath = `public/${fileName}`;
+      try {
+        if (saveBtn) saveBtn.textContent = "Komprimiere Bild...";
+        const compressedBlob = await compressImage(selectedFile);
+        
+        if (saveBtn) saveBtn.textContent = "Lade Bild hoch...";
+        const fileName = `campaign_${selectedCampaignId}_game_${gameNumberVal}_${Date.now()}.jpg`;
+        const filePath = `public/${fileName}`;
 
-      const { data: uploadData, error: uploadError } = await db.storage
-        .from('round-photos')
-        .upload(filePath, compressedBlob, {
-          contentType: 'image/jpeg',
-          upsert: false
-        });
+        const { data: uploadData, error: uploadError } = await db.storage
+          .from('round-photos')
+          .upload(filePath, compressedBlob, {
+            contentType: 'image/jpeg',
+            upsert: false
+          });
 
-      if (uploadError) throw uploadError;
+        if (uploadError) throw uploadError;
 
-      const { data: publicUrlData } = db.storage
-        .from('round-photos')
-        .getPublicUrl(filePath);
+        const { data: publicUrlData } = db.storage
+          .from('round-photos')
+          .getPublicUrl(filePath);
 
-      photoUrl = publicUrlData.publicUrl;
+        photoUrl = publicUrlData.publicUrl;
+      } catch (photoErr) {
+        console.error("Foto-Upload fehlgeschlagen:", photoErr);
+        alert("⚠️ Hinweis: Das Foto konnte nicht hochgeladen werden, aber deine Punkte und Runden-Daten werden trotzdem sicher gespeichert!");
+      }
     } else if (isEditing && editingRoundIndex !== null && campaign.rounds?.[editingRoundIndex]) {
       // Wenn wir im Edit-Modus sind und kein neues Bild gewählt wurde, behalten wir das alte bei
       photoUrl = campaign.rounds[editingRoundIndex].photo_url || null;
@@ -1237,8 +1245,9 @@ async function saveScore() {
     updatedRounds.sort((a, b) => (a.game_number || 0) - (b.game_number || 0));
     const updatedTotalScore = updatedRounds.reduce((sum, r) => sum + (r.total_score || 0), 0);
 
-    if (saveBtn) saveBtn.textContent = "Speichert...";
+    if (saveBtn) saveBtn.textContent = "Speichere Spieldaten...";
 
+    // Die Punkte werden jetzt GARANTIERT in Supabase gespeichert, egal ob das Foto geklappt hat oder nicht!
     const { error } = await db
       .from('dorfromantik_campaigns')
       .update({
@@ -1263,7 +1272,7 @@ async function saveScore() {
     // STATUS DEFINITIV IM GLOBALEN FLAG SICHERN
     wasEditingRound = isEditing;
 
-    // 1. Punkte-Modal NUR visuell ausblenden (OHNE closeScoreModal aufzurufen!)
+    // 1. Punkte-Modal NUR visuell ausblenden
     if (scoreModal) {
       delete scoreModal.dataset.mode;
       scoreModal.classList.add('hidden');
